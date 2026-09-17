@@ -37,6 +37,8 @@ class DailyReport(BaseModel):
     reasoning_summary: str
     schedule: ScheduleOut
     jev: dict = Field(default_factory=dict)
+    as_of: str | None = None
+    feed: dict = Field(default_factory=dict)
 
 
 class Yard(BaseModel):
@@ -51,3 +53,15 @@ class Yard(BaseModel):
     cycle_minutes: float = 50
     mower_height_inches: float = 3.0
     mower_max_inches: float = 4.0
+    mower_deck: list[float] = Field(default_factory=lambda: [1.25, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
+    height_targets_in: list[float] = Field(default_factory=lambda: [3.5, 2.75, 2.25, 2.25])
+    capacity_mm: float = 25
+    trigger_mm: float = 10
+    major_rain_mm: float = 8
+    winter_soak_mm: float = 25
+    kc: float = 0.95
+    et_factor: float = 1.0
+    mow_interval_days: dict[str, int] = Field(default_factory=lambda: {"low": 10, "medium": 7, "high": 5})
+    last_mow_date: str = "2026-09-17"
+    scheduled_water_minutes: dict[str, float] = Field(default_factory=lambda: {"2026-09-18": 50})
+    prior_balance_mm: float = 15
