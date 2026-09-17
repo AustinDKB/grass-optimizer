@@ -1,0 +1,134 @@
+/* Saskatchewan wheat + evergreen — matches portfolio design-system */
+:root {
+  --sk-bg: #f5ebd6;
+  --sk-surface: #fffef8;
+  --sk-raised: #ebe0c4;
+  --sk-primary: #1b4332;
+  --sk-primary-hover: #081c15;
+  --sk-primary-soft: #2d6a4f;
+  --sk-accent: #c9a227;
+  --sk-ink: #1a1f1c;
+  --sk-muted: #5c5648;
+  --sk-shadow: 3px 3px 0 0 #1a1f1c;
+}
+
+html, body.sk-body {
+  background: var(--sk-bg) !important;
+  color: var(--sk-ink);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 100% -20%, color-mix(in srgb, var(--sk-accent) 22%, transparent), transparent),
+    radial-gradient(ellipse 60% 40% at 0% 100%, color-mix(in srgb, var(--sk-primary) 12%, transparent), transparent);
+  background-attachment: fixed;
+}
+
+.sk-title { color: var(--sk-primary) !important; }
+.sk-accent { color: var(--sk-primary) !important; }
+
+.sk-btn-primary {
+  background: var(--sk-primary) !important;
+  border: 2px solid var(--sk-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--sk-shadow) !important;
+}
+.sk-btn-primary:hover { background: var(--sk-primary-hover) !important; }
+.sk-btn-primary:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 0 var(--sk-ink) !important; }
+
+.sk-btn-secondary {
+  background: var(--sk-surface) !important;
+  color: var(--sk-ink) !important;
+  border: 2px solid var(--sk-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--sk-shadow) !important;
+}
+.sk-btn-secondary:hover { background: var(--sk-raised) !important; }
+
+.sk-select {
+  background: var(--sk-surface) !important;
+  color: var(--sk-ink) !important;
+  border: 2px solid var(--sk-ink) !important;
+  box-shadow: 2px 2px 0 0 var(--sk-ink);
+}
+.sk-select:focus { outline: none; border-color: var(--sk-primary-soft) !important; }
+
+.sk-panel {
+  background: var(--sk-surface) !important;
+  border: 2px solid var(--sk-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--sk-shadow) !important;
+}
+
+.sk-tab-on {
+  background: var(--sk-primary) !important;
+  color: #fff !important;
+  border: 2px solid var(--sk-ink) !important;
+  box-shadow: var(--sk-shadow) !important;
+  border-radius: 4px !important;
+}
+.sk-tab-off {
+  background: var(--sk-surface) !important;
+  color: var(--sk-muted) !important;
+  border: 2px solid var(--sk-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: 2px 2px 0 0 var(--sk-ink);
+}
+.sk-tab-off:hover { background: var(--sk-raised) !important; color: var(--sk-ink) !important; }
+
+.sk-chip-on { background: var(--sk-primary) !important; border: 2px solid var(--sk-ink); border-radius: 4px !important; }
+.sk-chip-soft {
+  background: color-mix(in srgb, var(--sk-primary) 12%, #fff) !important;
+  color: var(--sk-primary) !important;
+  border: 1px solid color-mix(in srgb, var(--sk-primary) 25%, transparent);
+}
+
+.sk-ledger-item {
+  background: var(--sk-raised) !important;
+  border: 2px solid var(--sk-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: 2px 2px 0 0 var(--sk-ink);
+}
+
+/* Remap leftover purple utilities if any remain */
+.bg-purple-600, .from-purple-600 { background-color: var(--sk-primary) !important; }
+.to-purple-400, .bg-purple-400 { background-color: var(--sk-primary-soft) !important; }
+.text-purple-600 { color: var(--sk-primary) !important; }
+.bg-purple-50 { background-color: color-mix(in srgb, var(--sk-primary) 12%, #fff) !important; }
+.ring-purple-600, .ring-purple-400, .shadow-purple-200 { --tw-ring-color: var(--sk-primary) !important; }
+
+/* Chart bars */
+.bar.bg-gradient-to-t,
+.bar {
+  background-image: linear-gradient(to top, var(--sk-primary), var(--sk-primary-soft)) !important;
+}
+
+::-webkit-scrollbar-thumb { background: var(--sk-raised); border: 1px solid var(--sk-ink); border-radius: 0; }
+
+/* Fill the parent iframe viewport edge-to-edge (desktop); mobile scrolls */
+@media (min-width: 1024px) {
+  html, body.sk-body {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+  .sk-app-shell {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+}
+@media (max-width: 1023px) {
+  html, body.sk-body {
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .sk-app-shell {
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 100% !important;
+  }
+}
