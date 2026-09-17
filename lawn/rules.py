@@ -1,42 +1,74 @@
+import math
 from dataclasses import dataclass
+from datetime import date
 
-from lawn.models import Day
+from lawn.models import Day, Yard
 
+GSC = 0.0820
 CAPACITY = 25.0
 TRIGGER = 10.0
 MAJOR_RAIN = 8.0
 WINTER_SOAK = 25.0
 DECK = (1.25, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0)
 INTERVAL = {"low": 10, "medium": 7, "high": 5}
-# FAO extra-terrestrial radiation MJ/m2/day at 50N; Martensville is 52.3N.
-RA_MJ = (6.1, 10.2, 16.5, 23.6, 29.2, 31.4, 30.5, 25.4, 18.1, 11.6, 6.9, 4.9)
 
 
 def irrigation_mm(gpm: float, minutes: float, sqft: float) -> float:
     return (gpm * minutes * 3.785411784) / (sqft * 0.09290304)
 
 
-CYCLE_MM = round(irrigation_mm(4, 50, 1000), 2)
+def cycle_mm(yard: Yard | None = None) -> float:
+    y = yard or Yard()
+    return round(irrigation_mm(y.gpm, y.cycle_minutes, y.sqft), 2)
 
 
-def snap_deck(inches: float) -> float:
-    return min(DECK, key=lambda notch: (abs(notch - inches), -notch))
+CYCLE_MM = cycle_mm()
 
 
-# Summer 3.5, slowing 2.75→3.0, final 2.0–2.5→2.5. Deck has no 2.75 or 2.25.
-HEIGHT = tuple(snap_deck(h) for h in (3.5, 2.75, 2.25, 2.25))
+def manuals_mm(yard: Yard | None = None) -> dict[str, float]:
+    y = yard or Yard()
+    return {d: round(irrigation_mm(y.gpm, m, y.sqft), 2) for d, m in y.scheduled_water_minutes.items()}
+
+
+def days_since_mow(today: date, last: str) -> int:
+    return max(0, (today - date.fromisoformat(last)).days)
+
+
+def snap_deck(inches: float, deck: list[float] | tuple[float, ...] | None = None) -> float:
+    notches = tuple(deck) if deck is not None else DECK
+    return min(notches, key=lambda notch: (abs(notch - inches), -notch))
+
+
+def heights(yard: Yard | None = None) -> tuple[float, ...]:
+    y = yard or Yard()
+    return tuple(snap_deck(h, y.mower_deck) for h in y.height_targets_in)
+
+
+HEIGHT = heights()
+
+
+def ra_mj(lat: float, iso: str) -> float:
+    y, m, d = (int(p) for p in iso.split("-"))
+    j = date(y, m, d).timetuple().tm_yday
+    phi = math.radians(lat)
+    dr = 1 + 0.033 * math.cos(2 * math.pi * j / 365)
+    decl = 0.409 * math.sin(2 * math.pi * j / 365 - 1.39)
+    ws = math.acos(max(-1.0, min(1.0, -math.tan(phi) * math.tan(decl))))
+    return (24 * 60 / math.pi) * GSC * dr * (
+        ws * math.sin(phi) * math.sin(decl) + math.cos(phi) * math.cos(decl) * math.sin(ws)
+    )
+
+
+def et_mm(tmax: float, tmin: float, iso: str, yard: Yard | None = None) -> float:
+    y = yard or Yard()
+    ra_mm = ra_mj(y.lat, iso) * 0.408
+    tmean = (tmax + tmin) / 2
+    spread = max(tmax - tmin, 0.1) ** 0.5
+    return max(0.0, 0.0023 * ra_mm * (tmean + 17.8) * spread * y.kc * y.et_factor)
 
 
 def step_balance(prev: float, rain: float, manual: float, et: float, capacity: float = CAPACITY) -> float:
     return min(capacity, max(0.0, prev + rain + manual - et))
-
-
-def et_mm(tmax: float, tmin: float, month: int, kc: float = 0.85) -> float:
-    ra_mm = RA_MJ[month - 1] * 0.408
-    tmean = (tmax + tmin) / 2
-    spread = max(tmax - tmin, 0.1) ** 0.5
-    # ponytail: 1.25 prairie-arid factor; FAO-56 if we ever get WeatherAPI et0.
-    return max(0.0, 0.0023 * ra_mm * (tmean + 17.8) * spread * kc * 1.25)
 
 
 def consistently_below(vals: list[float], cap: float) -> bool:
@@ -62,12 +94,14 @@ def decide_mow(
     rain_24_48: float,
     watering_today: bool,
     winter: int = 0,
+    interval: dict[str, int] | None = None,
+    major_rain: float = MAJOR_RAIN,
 ) -> bool:
     if days_since <= 0:
         return False
-    interval = INTERVAL[growth]
-    close = days_since >= max(interval - 2, 3)
-    if close and rain_24_48 >= MAJOR_RAIN:
+    gap = (interval or INTERVAL)[growth]
+    close = days_since >= max(gap - 2, 3)
+    if close and rain_24_48 >= major_rain:
         return True
     if close and watering_today:
         return True
@@ -75,22 +109,30 @@ def decide_mow(
         return True
     if winter >= 2:
         return True
-    return days_since >= interval
+    return days_since >= gap
 
 
 def rain_soon(days: list[Day], i: int) -> float:
     return sum(d.rain for d in days[i + 1 : i + 3])
 
 
-def water_mm(balance: float, scheduled: float, winter: int, coming: float, soaked: bool) -> tuple[float, bool]:
+def water_mm(
+    balance: float,
+    scheduled: float,
+    winter: int,
+    coming: float,
+    soaked: bool,
+    yard: Yard | None = None,
+) -> tuple[float, bool]:
+    y = yard or Yard()
     if scheduled:
         return scheduled, True
     if winter >= 3 and not soaked:
-        return WINTER_SOAK, True
-    if coming >= MAJOR_RAIN:
+        return y.winter_soak_mm, True
+    if coming >= y.major_rain_mm:
         return 0.0, False
-    if balance < TRIGGER:
-        return CYCLE_MM, True
+    if balance < y.trigger_mm:
+        return cycle_mm(y), True
     return 0.0, False
 
 
@@ -110,10 +152,20 @@ class Schedule:
     frost_watch_date: str | None = None
 
 
-def replay(days: list[Day], start: float = 15.0, manuals: dict[str, float] | None = None) -> float:
-    bal, manuals = start, manuals or {}
+def replay(
+    days: list[Day],
+    start: float = 15.0,
+    manuals: dict[str, float] | None = None,
+    yard: Yard | None = None,
+    since: str | None = None,
+) -> float:
+    y, manuals = yard or Yard(), manuals or {}
+    bal = start
     for d in days:
-        bal = step_balance(bal, d.rain, manuals.get(d.date, 0.0), et_mm(d.tmax, d.tmin, d.month))
+        if since is not None and d.date < since:
+            continue
+        et = et_mm(d.tmax, d.tmin, d.date, y)
+        bal = step_balance(bal, d.rain, manuals.get(d.date, 0.0), et, y.capacity_mm)
     return bal
 
 
@@ -146,24 +198,30 @@ def project_schedule(
     days_since_mow: int,
     growth: str,
     scheduled_water: dict[str, float],
+    yard: Yard | None = None,
 ) -> Schedule:
-    out = Schedule(None, None, None, None, False, False, 0.0, 3.5, 0, start_balance)
+    y = yard or Yard()
+    hs = heights(y)
+    out = Schedule(None, None, None, None, False, False, 0.0, hs[0], 0, start_balance)
     balance, since = start_balance, days_since_mow
     for i, day in enumerate(days):
         slice7 = days[i : i + 7]
         winter = winter_status([d.tmax for d in slice7], [d.tmin for d in slice7])
         coming = rain_soon(days, i)
         soaked = out.last_water_of_season is not None
-        manual, watering = water_mm(balance, scheduled_water.get(day.date, 0.0), winter, coming, soaked)
-        mow = decide_mow(since, growth, coming, watering, winter)
+        manual, watering = water_mm(
+            balance, scheduled_water.get(day.date, 0.0), winter, coming, soaked, y
+        )
+        mow = decide_mow(since, growth, coming, watering, winter, y.mow_interval_days, y.major_rain_mm)
         note(out, day.date, watering, mow, winter)
         if i == 0:
             out.should_mow = mow
             out.should_water = watering
             out.target_water_mm = manual if watering else 0.0
-            out.mower_height = HEIGHT[winter]
+            out.mower_height = hs[winter]
             out.winter = winter
-        balance = step_balance(balance, day.rain, manual, et_mm(day.tmax, day.tmin, day.month))
+        et = et_mm(day.tmax, day.tmin, day.date, y)
+        balance = step_balance(balance, day.rain, manual, et, y.capacity_mm)
         since = 0 if mow else since + 1
     out.end_balance = balance
     return out

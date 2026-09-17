@@ -1,7 +1,7 @@
 from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
 
 from lawn.models import Day, Yard
-from lawn.rules import HEIGHT, winter_status
+from lawn.rules import heights, winter_status
 
 
 def questions() -> dict:
@@ -57,9 +57,9 @@ def ask_jev(yard: Yard, location: dict, history: list[Day], forecast: list[Day],
         "policy": {
             "water_balance_mm": round(balance_mm, 2),
             "mow_before_watering": True,
-            "major_rain_mm": 8,
+            "major_rain_mm": yard.major_rain_mm,
             "winter_phase_code": winter_status(highs, lows),
-            "mower_height_inches_by_phase": list(HEIGHT),
+            "mower_height_inches_by_phase": list(heights(yard)),
         },
         "lawn": {"days_since_mow": days_since_mow, "current_mower_height_inches": yard.mower_height_inches},
         "history": [d.model_dump() for d in history],

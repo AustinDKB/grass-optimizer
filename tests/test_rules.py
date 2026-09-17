@@ -134,5 +134,88 @@ class HorizonTests(unittest.TestCase):
         self.assertEqual(season_end(days), ("2026-10-19", "2026-10-19"))
 
 
+class RadiationTests(unittest.TestCase):
+    def test_ra_matches_fao56_bangkok_15_april(self):
+        from lawn.rules import ra_mj
+        # FAO-56 Example 8: 13°44'N, 15 April → Ra ≈ 38.1 MJ m-2 d-1
+        self.assertAlmostEqual(ra_mj(13.73, "2015-04-15"), 38.1, delta=0.4)
+
+    def test_ra_june_15_at_50n_matches_fao_table(self):
+        from lawn.rules import ra_mj
+        # FAO-56 Table 2.6 / Eq. 21: ~41.2 MJ m-2 d-1 at 50°N on 15 June
+        self.assertAlmostEqual(ra_mj(50.0, "2026-06-15"), 41.2, delta=0.6)
+
+
+class EtTests(unittest.TestCase):
+    def test_june_et_is_higher_at_40n_than_at_martensville(self):
+        from lawn.models import Yard
+        from lawn.rules import et_mm
+        south = et_mm(26, 12, "2026-06-15", Yard(lat=40.0, kc=1.0, et_factor=1.0))
+        north = et_mm(26, 12, "2026-06-15", Yard(lat=52.2897, kc=1.0, et_factor=1.0))
+        self.assertGreater(south, north)
+
+    def test_et_is_zero_in_deep_cold(self):
+        from lawn.rules import et_mm
+        self.assertEqual(et_mm(-30, -40, "2026-01-15"), 0.0)
+
+
+class ConfigTests(unittest.TestCase):
+    def test_halving_cycle_minutes_halves_applied_water(self):
+        from lawn.models import Yard
+        from lawn.rules import cycle_mm
+        self.assertAlmostEqual(cycle_mm(Yard(cycle_minutes=50)), 8.15, places=2)
+        self.assertAlmostEqual(cycle_mm(Yard(cycle_minutes=25)), 4.07, places=2)
+
+    def test_days_since_mow_counts_from_config_date(self):
+        from lawn.rules import days_since_mow
+        self.assertEqual(days_since_mow(date(2026, 9, 17), "2026-09-17"), 0)
+        self.assertEqual(days_since_mow(date(2026, 9, 24), "2026-09-17"), 7)
+
+    def test_scheduled_water_is_only_the_configured_dates(self):
+        from lawn.models import Yard
+        from lawn.rules import manuals_mm
+        y = Yard(scheduled_water_minutes={"2026-09-18": 50})
+        self.assertAlmostEqual(manuals_mm(y)["2026-09-18"], 8.15, places=2)
+        self.assertEqual(manuals_mm(Yard(scheduled_water_minutes={})), {})
+
+    def test_replay_applies_only_days_on_or_after_saved_as_of(self):
+        from lawn.rules import replay
+        days = _days(date(2026, 9, 15), highs=[18, 18, 18], lows=[8, 8, 8], rain=[0, 5, 0])
+        full = replay(days, start=15)
+        later = replay(days, start=15, since="2026-09-16")
+        self.assertGreater(later, full)
+
+
+class MergeTests(unittest.TestCase):
+    def test_lockdown_height_is_a_real_deck_notch(self):
+        from lawn.daily import merge
+        from lawn.rules import Schedule
+        sched = Schedule(
+            next_water_date="2026-09-17",
+            next_mow_date="2026-09-17",
+            last_water_of_season="2026-09-17",
+            last_mow_of_season="2026-09-17",
+            should_mow=True,
+            should_water=True,
+            target_water_mm=25,
+            mower_height=2.5,
+            winter=3,
+            end_balance=20,
+        )
+        jev = {
+            "growth": "low",
+            "significant_rain_24_48h": 0.0,
+            "should_mow_now": 0.0,
+            "rain_covers_watering": 0.0,
+            "freeze_blowout_now": 1.0,
+            "mower_regime": "final",
+            "model": "test",
+        }
+        report = merge(sched, jev, 10, {"name": "Warman", "region": "Saskatchewan"})
+        self.assertEqual(report.lawn_action_items.recommended_mower_height_inches, 2.5)
+        self.assertEqual(report.feed["cycle_minutes"], 50)
+        self.assertEqual(report.feed["gpm"], 4)
+
+
 if __name__ == "__main__":
     unittest.main()
