@@ -2,7 +2,7 @@
 
 Daily watering and mowing schedule for a west-facing Martensville, SK yard (Scotts Quick Thick Shade & Sun). Code owns water balance and Saskatchewan winter steps; [Jev](https://docs.typesafe.ai) judges growth, rain, and freeze.
 
-Live: [grass.austinbakanec.com](https://grass.austinbakanec.com)
+Live on Tailscale only: [grass.austinbakanec.com](https://grass.austinbakanec.com) (same bind as sniper/pp — not on the public internet).
 
 ```bash
 python3 -m venv .venv
