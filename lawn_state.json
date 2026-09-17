@@ -1,0 +1,32 @@
+{
+  "current_water_balance_mm": 13.53,
+  "estimated_growth_rate": "medium",
+  "lawn_action_items": {
+    "should_water": false,
+    "target_water_amount_mm": 0.0,
+    "should_mow": false,
+    "recommended_mower_height_inches": 3.5,
+    "is_winter_shutdown_triggered": false
+  },
+  "reasoning_summary": "Warman, Saskatchewan. Soil water balance 13.5 mm of a 25 mm profile. Growth medium. Next water 2026-09-18 (8.15 mm / 50 min); water again 2026-09-25. Last deep soak 2026-10-22. Next mow 2026-09-24; last winter cut 2026-10-22. Frost watch 2026-09-28. Winter phase 0 (0 summer / 1 slowing / 2 final cut / 3 lockdown). Jev rain-in-48h 0.02, freeze 0.18.",
+  "schedule": {
+    "next_water_date": "2026-09-18",
+    "following_water_date": "2026-09-25",
+    "next_mow_date": "2026-09-24",
+    "last_water_of_season": "2026-10-22",
+    "last_mow_of_season": "2026-10-22",
+    "frost_watch_date": "2026-09-28"
+  },
+  "jev": {
+    "growth": "medium",
+    "growth_score": 1.05,
+    "growth_confidence": 0.87,
+    "significant_rain_24_48h": 0.02,
+    "should_mow_now": 0.29,
+    "rain_covers_watering": 0.16,
+    "freeze_blowout_now": 0.18,
+    "mower_regime": "summer",
+    "mower_regime_confidence": 0.58,
+    "model": "jev-1.13.0"
+  }
+}
