@@ -88,3 +88,20 @@ h1, h2 { letter-spacing: -0.02em; }
 a { color: var(--sk-primary-soft); }
 .muted { color: var(--sk-muted); }
 header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; font-weight: 600; }
+.field input, .field textarea {
+  font: inherit;
+  font-weight: 400;
+  border: 2px solid var(--sk-ink);
+  border-radius: 4px;
+  padding: 0.4rem 0.5rem;
+  background: var(--sk-surface);
+}
+.form-grid { display: grid; gap: 0.75rem; }
+@media (min-width: 720px) {
+  .form-grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+button.chip { cursor: pointer; font: inherit; }
+table.ledger { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+table.ledger th, table.ledger td { border-bottom: 1px solid var(--sk-ink); padding: 0.4rem 0.45rem; text-align: left; white-space: nowrap; }
+table.ledger th { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sk-muted); }

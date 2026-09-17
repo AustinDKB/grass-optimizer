@@ -19,8 +19,8 @@ def questions() -> dict:
         ),
         "should_mow_now": Noul(
             instructions=(
-                "Mow today while dry, including slightly early to beat rain or watering? "
-                "Never if `lawn.days_since_mow` is 0."
+                "Mow today while dry, including slightly early to beat rain? "
+                "Never if `lawn.days_since_mow` is 0. Never on a watering day — cut the day before."
             ),
         ),
         "rain_covers_watering": Noul(
