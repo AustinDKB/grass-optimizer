@@ -10,4 +10,5 @@ __pycache__/
 .agents/
 skills-lock.json
 .vercel/
+ledger.json
 

@@ -14,7 +14,7 @@
   <div class="sk-app-shell">
     <header>
       <div>
-        <span class="stamp">Live daily · Tailscale</span>
+        <span class="stamp">Live · Tailscale · CST</span>
         <h1 class="sk-title" style="margin:0.4rem 0 0;font-size:clamp(1.6rem,4vw,2.4rem)">Grass Optimizer</h1>
         <p class="muted" style="margin:0.35rem 0 0" id="place">loading yard…</p>
       </div>
@@ -52,17 +52,67 @@
       </div>
     </div>
 
+    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem" id="prev-panel">
+      <h2 class="sk-title" style="margin:0 0 0.5rem;font-size:1rem">Previous run</h2>
+      <p class="mono" id="prev" style="margin:0;font-size:0.85rem;line-height:1.7">no earlier run yet</p>
+    </div>
+
+    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
+      <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Settings</h2>
+      <p class="muted" style="margin:0 0 0.75rem;font-size:0.85rem">Tailscale only. Watering never shares a day with mowing — cut the dry day before.</p>
+      <form id="yard-form" class="form-grid">
+        <label class="field">Cycle minutes <input name="cycle_minutes" type="number" step="1" min="1" required /></label>
+        <label class="field">GPM <input name="gpm" type="number" step="0.1" min="0.1" required /></label>
+        <label class="field">Yard sqft <input name="sqft" type="number" step="1" min="1" required /></label>
+        <label class="field">Last mow date <input name="last_mow_date" type="date" required /></label>
+        <label class="field">Capacity mm <input name="capacity_mm" type="number" step="0.1" min="1" required /></label>
+        <label class="field">Trigger mm <input name="trigger_mm" type="number" step="0.1" min="0" required /></label>
+        <label class="field">Kc <input name="kc" type="number" step="0.01" min="0.1" required /></label>
+        <label class="field">ET factor <input name="et_factor" type="number" step="0.01" min="0.1" required /></label>
+        <label class="field">Current cut (in) <input name="mower_height_inches" type="number" step="0.25" required /></label>
+        <label class="field">Mow interval low/med/high
+          <input name="intervals" type="text" placeholder="10 7 5" />
+        </label>
+        <label class="field" style="grid-column:1/-1">Scheduled water (one per line: YYYY-MM-DD minutes)
+          <textarea name="scheduled" rows="3" placeholder="2026-09-18 50"></textarea>
+        </label>
+        <div class="row" style="grid-column:1/-1">
+          <button type="submit" class="chip go" id="save-btn">Save settings</button>
+          <button type="button" class="chip" id="run-btn">Save &amp; run now</button>
+          <span class="mono muted" id="form-status"></span>
+        </div>
+      </form>
+    </div>
+
+    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
+      <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Run ledger</h2>
+      <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem">Newest first · 7am / 12pm / 4pm America/Regina (CST, no DST)</p>
+      <div style="overflow-x:auto">
+        <table class="ledger" id="ledger">
+          <thead>
+            <tr>
+              <th>Ran (CST)</th><th>As of</th><th>Bal mm</th><th>Growth</th>
+              <th>Water</th><th>Mow</th><th>Min</th><th>Next water</th><th>Next mow</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
     <p class="muted" style="margin-top:1.5rem;font-size:0.85rem">
-      Daily job: weather in, water-balance + SK winter rules in code, Jev for growth / rain / freeze judgments.
-      Knobs live in <span class="mono">yard.json</span>.
+      Never mow on a watering day. Cut the day before if the window is close.
       <a href="https://github.com/AustinDKB/grass-optimizer">GitHub</a>
       · <a href="https://www.austinbakanec.com">Portfolio</a>
     </p>
   </div>
   <script>
     const fmt = (iso) => iso ? new Date(iso + "T12:00:00").toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" }) : "—";
+    const yn = (v) => v ? "yes" : "no";
     const card = (label, when) => `<div class="sk-panel date-card"><div class="label">${label}</div><div class="when">${fmt(when)}</div><div class="mono muted" style="margin-top:0.2rem;font-size:0.75rem">${when || "not dated"}</div></div>`;
-    fetch("lawn_state.json").then(r => r.json()).then((d) => {
+    const prevLine = (p) => p ? `${p.ran_at || "—"} · bal ${p.balance_mm} mm · growth ${p.growth} · water ${yn(p.should_water)} · mow ${yn(p.should_mow)} · next water ${p.next_water || "—"} · next mow ${p.next_mow || "—"}` : "no earlier run yet";
+
+    function paintState(d) {
       const a = d.lawn_action_items, s = d.schedule, j = d.jev || {}, f = d.feed || {};
       const cap = f.capacity_mm || 25;
       const deck = f.mower_deck || [1.25, 1.5, 2, 2.5, 3, 3.5, 4];
@@ -75,7 +125,7 @@
         (f.address || "Martensville") + " · " + (f.grass || "cool-season mix") +
         " · " + (f.facing || "west") + " yard, " + (f.light || "morning shade");
       document.getElementById("updated").textContent =
-        (d.as_of || "") + " · growth " + d.estimated_growth_rate +
+        (f.ran_at || d.as_of || "") + " · growth " + d.estimated_growth_rate +
         " · " + cycleMin + " min @ " + gpm + " GPM / " + (f.sqft || 1000) + " sqft";
       document.getElementById("today-water").textContent = a.should_water
         ? ("Water today · " + (mins || cycleMin) + " min")
@@ -102,12 +152,106 @@
         const cls = n === nowCut ? "notch now" : (n === rec ? "notch rec" : "notch");
         return `<span class="${cls}">${n}"</span>`;
       }).join("");
-      document.getElementById("deck-note").textContent = "Gold = last cut (" + nowCut + "\"). Evergreen = recommended " + rec + "\".";
+      document.getElementById("deck-note").textContent = "Gold = last cut (" + nowCut + "\"). Evergreen = recommended " + rec + "\". Never mow the same day you water.";
       document.getElementById("why").textContent = d.reasoning_summary;
       document.getElementById("jev").textContent =
         "growth " + (j.growth_score ?? "—") + "  rain48 " + Number(j.significant_rain_24_48h || 0).toFixed(2) +
         "\nmow-now " + Number(j.should_mow_now || 0).toFixed(2) + "  freeze " + Number(j.freeze_blowout_now || 0).toFixed(2) +
         "\nregime " + (j.mower_regime || "—") + "  " + (j.model || "");
+      document.getElementById("prev").textContent = prevLine(d.previous_run);
+    }
+
+    function paintLedger(rows) {
+      const tb = document.querySelector("#ledger tbody");
+      tb.innerHTML = (rows || []).map((r) => `<tr>
+        <td class="mono">${r.ran_at || "—"}</td>
+        <td>${r.as_of || "—"}</td>
+        <td>${r.balance_mm ?? "—"}</td>
+        <td>${r.growth || "—"}</td>
+        <td>${yn(r.should_water)}</td>
+        <td>${yn(r.should_mow)}</td>
+        <td>${r.target_minutes ?? r.cycle_minutes ?? "—"}</td>
+        <td>${r.next_water || "—"}</td>
+        <td>${r.next_mow || "—"}</td>
+      </tr>`).join("") || `<tr><td colspan="9">no runs yet</td></tr>`;
+    }
+
+    function fillForm(y) {
+      const f = document.getElementById("yard-form");
+      f.cycle_minutes.value = y.cycle_minutes;
+      f.gpm.value = y.gpm;
+      f.sqft.value = y.sqft;
+      f.last_mow_date.value = y.last_mow_date;
+      f.capacity_mm.value = y.capacity_mm;
+      f.trigger_mm.value = y.trigger_mm;
+      f.kc.value = y.kc;
+      f.et_factor.value = y.et_factor;
+      f.mower_height_inches.value = y.mower_height_inches;
+      const iv = y.mow_interval_days || {};
+      f.intervals.value = [iv.low, iv.medium, iv.high].filter((n) => n != null).join(" ") || "10 7 5";
+      f.scheduled.value = Object.entries(y.scheduled_water_minutes || {}).map(([d, m]) => d + " " + m).join("\n");
+    }
+
+    function formPayload() {
+      const f = document.getElementById("yard-form");
+      const parts = f.intervals.value.trim().split(/\s+/).map(Number);
+      const scheduled = {};
+      for (const line of f.scheduled.value.split("\n")) {
+        const bits = line.trim().split(/\s+/);
+        if (bits.length >= 2 && bits[0]) scheduled[bits[0]] = Number(bits[1]);
+      }
+      return {
+        cycle_minutes: Number(f.cycle_minutes.value),
+        gpm: Number(f.gpm.value),
+        sqft: Number(f.sqft.value),
+        last_mow_date: f.last_mow_date.value,
+        capacity_mm: Number(f.capacity_mm.value),
+        trigger_mm: Number(f.trigger_mm.value),
+        kc: Number(f.kc.value),
+        et_factor: Number(f.et_factor.value),
+        mower_height_inches: Number(f.mower_height_inches.value),
+        mow_interval_days: { low: parts[0] || 10, medium: parts[1] || 7, high: parts[2] || 5 },
+        scheduled_water_minutes: scheduled,
+      };
+    }
+
+    const status = (msg) => { document.getElementById("form-status").textContent = msg; };
+
+    document.getElementById("yard-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      status("saving…");
+      const r = await fetch("/api/yard", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formPayload()) });
+      status(r.ok ? "saved" : "save failed");
+      if (r.ok) fillForm(await r.json());
+    });
+
+    document.getElementById("run-btn").addEventListener("click", async () => {
+      status("saving…");
+      const saved = await fetch("/api/yard", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formPayload()) });
+      if (!saved.ok) { status("save failed"); return; }
+      status("running (weather + Jev)…");
+      const r = await fetch("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      if (!r.ok) { status("run failed"); return; }
+      const d = await r.json();
+      paintState(d);
+      const led = await fetch("/api/ledger").then((x) => x.json()).catch(() => []);
+      paintLedger(led);
+      fillForm(await fetch("/api/yard").then((x) => x.json()));
+      status("ran " + (d.feed && d.feed.ran_at || ""));
+    });
+
+    Promise.all([
+      fetch("lawn_state.json").then((r) => r.json()),
+      fetch("ledger.json").then((r) => r.ok ? r.json() : []).catch(() => []),
+      fetch("/api/yard").then((r) => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([d, rows, yard]) => {
+      paintState(d);
+      paintLedger(rows);
+      fillForm(yard || {
+        ...d.feed,
+        scheduled_water_minutes: {},
+        mow_interval_days: { low: 10, medium: 7, high: 5 },
+      });
     }).catch(() => { document.getElementById("updated").textContent = "snapshot missing"; });
   </script>
 </body>

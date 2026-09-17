@@ -8,25 +8,25 @@
     "recommended_mower_height_inches": 3.5,
     "is_winter_shutdown_triggered": false
   },
-  "reasoning_summary": "Warman, Saskatchewan. Soil water balance 11.1 mm of a 25 mm profile. Growth medium. Next water 2026-09-18 (8.15 mm / 50 min @ 4 GPM); water again 2026-09-22. Last deep soak 2026-10-22. Next mow 2026-09-22; last winter cut 2026-10-22. Frost watch 2026-09-28. Winter phase 0 (0 summer / 1 slowing / 2 final cut / 3 lockdown). Jev rain-in-48h 0.02, freeze 0.21.",
+  "reasoning_summary": "Warman, Saskatchewan. Soil water balance 11.1 mm of a 25 mm profile. Growth medium. Next water 2026-09-18 (8.15 mm / 50 min @ 4 GPM); water again 2026-09-22. Last deep soak 2026-10-22. Next mow 2026-09-24; last winter cut 2026-10-22. Frost watch 2026-09-28. Winter phase 0 (0 summer / 1 slowing / 2 final cut / 3 lockdown). Jev rain-in-48h 0.01, freeze 0.16.",
   "schedule": {
     "next_water_date": "2026-09-18",
     "following_water_date": "2026-09-22",
-    "next_mow_date": "2026-09-22",
+    "next_mow_date": "2026-09-24",
     "last_water_of_season": "2026-10-22",
     "last_mow_of_season": "2026-10-22",
     "frost_watch_date": "2026-09-28"
   },
   "jev": {
     "growth": "medium",
-    "growth_score": 1.07,
-    "growth_confidence": 0.87,
-    "significant_rain_24_48h": 0.02,
-    "should_mow_now": 0.29,
-    "rain_covers_watering": 0.11,
-    "freeze_blowout_now": 0.21,
+    "growth_score": 1.09,
+    "growth_confidence": 0.84,
+    "significant_rain_24_48h": 0.01,
+    "should_mow_now": 0.42,
+    "rain_covers_watering": 0.12,
+    "freeze_blowout_now": 0.16,
     "mower_regime": "summer",
-    "mower_regime_confidence": 0.78,
+    "mower_regime_confidence": 0.77,
     "model": "jev-1.13.0"
   },
   "as_of": "2026-09-17",
@@ -56,6 +56,9 @@
     ],
     "last_mow_date": "2026-09-17",
     "target_water_minutes": 0.0,
-    "as_of": "2026-09-17"
-  }
+    "as_of": "2026-09-17",
+    "ran_at": "2026-09-17T17:48-06:00",
+    "ledger_count": 1
+  },
+  "previous_run": null
 }
