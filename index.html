@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Grass Optimizer — Martensville SK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/theme-sk.css" />
+  <link rel="stylesheet" href="assets/page.css" />
+</head>
+<body class="sk-body">
+  <div class="sk-app-shell">
+    <header>
+      <div>
+        <span class="stamp">Live daily · Martensville</span>
+        <h1 class="sk-title" style="margin:0.4rem 0 0;font-size:clamp(1.6rem,4vw,2.4rem)">Grass Optimizer</h1>
+        <p class="muted" style="margin:0.35rem 0 0">702B 1st Ave N · Scotts Quick Thick Shade &amp; Sun · west yard, morning shade</p>
+      </div>
+      <p class="mono muted" id="updated">loading snapshot…</p>
+    </header>
+
+    <div class="row" style="margin-bottom:1rem">
+      <span class="chip" id="today-water">Water today?</span>
+      <span class="chip" id="today-mow">Mow today?</span>
+      <span class="chip" id="shutdown">Winter lockdown</span>
+    </div>
+
+    <div class="grid grid-4" id="dates"></div>
+
+    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
+      <div class="label muted mono" style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase">Soil water · 25 mm profile</div>
+      <div class="meter" style="margin:0.55rem 0"><span id="bar" style="width:0%"></span></div>
+      <p class="mono" id="balance" style="margin:0;font-weight:600"></p>
+    </div>
+
+    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
+      <div class="muted" style="font-size:0.85rem;margin-bottom:0.5rem">Mower deck — current cut <b>3"</b> · max <b>4"</b></div>
+      <div class="row" id="deck"></div>
+      <p class="muted" style="margin:0.65rem 0 0;font-size:0.9rem" id="deck-note"></p>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:0.75rem">
+      <div class="sk-panel" style="padding:1.1rem">
+        <h2 class="sk-title" style="margin:0 0 0.5rem;font-size:1rem">Why</h2>
+        <p id="why" style="margin:0;line-height:1.55"></p>
+      </div>
+      <div class="sk-panel" style="padding:1.1rem">
+        <h2 class="sk-title" style="margin:0 0 0.5rem;font-size:1rem">Jev</h2>
+        <p class="mono" id="jev" style="margin:0;font-size:0.85rem;line-height:1.7"></p>
+      </div>
+    </div>
+
+    <p class="muted" style="margin-top:1.5rem;font-size:0.85rem">
+      Daily job: weather in, water-balance + SK winter rules in code, Jev for growth / rain / freeze judgments.
+      <a href="https://github.com/AustinDKB/grass-optimizer">GitHub</a>
+      · <a href="https://www.austinbakanec.com">Portfolio</a>
+    </p>
+  </div>
+  <script>
+    const DECK = [1.25, 1.5, 2, 2.5, 3, 3.5, 4];
+    const fmt = (iso) => iso ? new Date(iso + "T12:00:00").toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" }) : "—";
+    const card = (label, when) => `<div class="sk-panel date-card"><div class="label">${label}</div><div class="when">${fmt(when)}</div><div class="mono muted" style="margin-top:0.2rem;font-size:0.75rem">${when || "not dated"}</div></div>`;
+    fetch("lawn_state.json").then(r => r.json()).then((d) => {
+      const a = d.lawn_action_items, s = d.schedule, j = d.jev || {};
+      document.getElementById("updated").textContent = "growth " + d.estimated_growth_rate;
+      document.getElementById("today-water").textContent = a.should_water ? "Water today" : "No water today";
+      document.getElementById("today-water").className = "chip " + (a.should_water ? "go" : "stop");
+      document.getElementById("today-mow").textContent = a.should_mow ? "Mow today" : "No mow today";
+      document.getElementById("today-mow").className = "chip " + (a.should_mow ? "go" : "stop");
+      document.getElementById("shutdown").textContent = a.is_winter_shutdown_triggered ? "Lockdown" : "Growing season";
+      document.getElementById("dates").innerHTML = [
+        card("Water next", s.next_water_date),
+        card("Water again", s.following_water_date),
+        card("Mow next", s.next_mow_date),
+        card("Last soak + last cut", s.last_water_of_season),
+      ].join("");
+      const pct = Math.max(0, Math.min(100, (d.current_water_balance_mm / 25) * 100));
+      document.getElementById("bar").style.width = pct + "%";
+      document.getElementById("balance").textContent = d.current_water_balance_mm.toFixed(1) + " mm  ·  " + a.target_water_amount_mm + " mm if watering";
+      const rec = a.recommended_mower_height_inches;
+      document.getElementById("deck").innerHTML = DECK.map((n) => {
+        const cls = n === 3 ? "notch now" : (n === rec ? "notch rec" : "notch");
+        return `<span class="${cls}">${n}"</span>`;
+      }).join("");
+      document.getElementById("deck-note").textContent = "Gold = you cut today (3\"). Evergreen = recommended " + rec + "\".";
+      document.getElementById("why").textContent = d.reasoning_summary;
+      document.getElementById("jev").textContent =
+        "growth " + (j.growth_score ?? "—") + "  rain48 " + Number(j.significant_rain_24_48h || 0).toFixed(2) +
+        "\nmow-now " + Number(j.should_mow_now || 0).toFixed(2) + "  freeze " + Number(j.freeze_blowout_now || 0).toFixed(2) +
+        "\nregime " + (j.mower_regime || "—") + "  " + (j.model || "");
+    }).catch(() => { document.getElementById("updated").textContent = "snapshot missing"; });
+  </script>
+</body>
+</html>
