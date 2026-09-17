@@ -1,0 +1,90 @@
+/* Page layout on top of theme-sk.css. Allow scroll in the portfolio iframe. */
+html, body.sk-body {
+  height: auto !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+.sk-app-shell {
+  height: auto !important;
+  max-width: 64rem !important;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+}
+body.sk-body {
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  margin: 0;
+}
+h1, h2 { letter-spacing: -0.02em; }
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+.row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.grid { display: grid; gap: 0.75rem; }
+@media (min-width: 720px) {
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+}
+.stamp {
+  display: inline-block;
+  border: 2px solid var(--sk-ink);
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--sk-accent);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--sk-surface);
+  border: 2px solid var(--sk-ink);
+  border-radius: 4px;
+  box-shadow: 2px 2px 0 0 var(--sk-ink);
+}
+.date-card { padding: 1rem 1.1rem; }
+.date-card .label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sk-muted);
+}
+.date-card .when {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--sk-primary);
+  margin-top: 0.25rem;
+}
+.meter {
+  height: 14px;
+  background: var(--sk-raised);
+  border: 2px solid var(--sk-ink);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.meter > span {
+  display: block;
+  height: 100%;
+  background: var(--sk-primary);
+}
+.notch {
+  min-width: 2.6rem;
+  text-align: center;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 2px solid var(--sk-ink);
+  border-radius: 4px;
+  background: var(--sk-surface);
+}
+.notch.now { background: var(--sk-accent); }
+.notch.rec { background: var(--sk-primary); color: #fff; }
+.go { background: var(--sk-primary); color: #fff; }
+.stop { background: var(--sk-surface); }
+a { color: var(--sk-primary-soft); }
+.muted { color: var(--sk-muted); }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
