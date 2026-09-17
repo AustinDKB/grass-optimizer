@@ -39,6 +39,7 @@ class DailyReport(BaseModel):
     jev: dict = Field(default_factory=dict)
     as_of: str | None = None
     feed: dict = Field(default_factory=dict)
+    previous_run: dict | None = None
 
 
 class Yard(BaseModel):

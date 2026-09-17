@@ -51,9 +51,20 @@ class MowTests(unittest.TestCase):
             decide_mow(days_since=0, growth="high", rain_24_48=20, watering_today=True)
         )
 
-    def test_mow_before_watering_when_window_is_close(self):
+    def test_never_mow_on_a_watering_day(self):
+        self.assertFalse(
+            decide_mow(days_since=7, growth="medium", rain_24_48=0, watering_today=True)
+        )
+
+    def test_mow_the_dry_day_before_watering(self):
         self.assertTrue(
-            decide_mow(days_since=5, growth="medium", rain_24_48=0, watering_today=True)
+            decide_mow(
+                days_since=5,
+                growth="medium",
+                rain_24_48=0,
+                watering_today=False,
+                watering_tomorrow=True,
+            )
         )
 
 
@@ -98,7 +109,8 @@ class ScheduleTests(unittest.TestCase):
             scheduled_water={"2026-09-18": 8.15},
         )
         self.assertEqual(sched.next_water_date, "2026-09-18")
-        self.assertEqual(sched.next_mow_date, "2026-09-24")
+        self.assertNotEqual(sched.next_mow_date, sched.next_water_date)
+        self.assertNotEqual(sched.next_mow_date, sched.following_water_date)
         self.assertIsNotNone(sched.following_water_date)
         self.assertGreater(sched.following_water_date, "2026-09-18")
 
@@ -116,11 +128,11 @@ class ScheduleTests(unittest.TestCase):
             growth="low",
             scheduled_water={},
         )
-        # Freeze appears in the 7-day outlook, so soak and final cut happen now.
-        self.assertEqual(sched.last_mow_of_season, "2026-09-17")
+        # Freeze soak is today — water first; cut is not the same (wet) day.
         self.assertEqual(sched.last_water_of_season, "2026-09-17")
-        self.assertTrue(sched.should_mow)
         self.assertTrue(sched.should_water)
+        self.assertFalse(sched.should_mow)
+        self.assertNotEqual(sched.last_mow_of_season, sched.last_water_of_season)
 
 
 class HorizonTests(unittest.TestCase):
@@ -213,8 +225,26 @@ class MergeTests(unittest.TestCase):
         }
         report = merge(sched, jev, 10, {"name": "Warman", "region": "Saskatchewan"})
         self.assertEqual(report.lawn_action_items.recommended_mower_height_inches, 2.5)
+        self.assertTrue(report.lawn_action_items.should_water)
+        self.assertFalse(report.lawn_action_items.should_mow)
         self.assertEqual(report.feed["cycle_minutes"], 50)
         self.assertEqual(report.feed["gpm"], 4)
+
+
+class LedgerTests(unittest.TestCase):
+    def test_newest_run_is_first(self):
+        import json
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from lawn.daily import record_ledger
+
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ledger.json"
+            record_ledger({"ran_at": "a", "balance_mm": 1}, path)
+            record_ledger({"ran_at": "b", "balance_mm": 2}, path)
+            rows = json.loads(path.read_text())
+            self.assertEqual([r["ran_at"] for r in rows], ["b", "a"])
+            self.assertEqual(rows[1]["balance_mm"], 1)
 
 
 if __name__ == "__main__":

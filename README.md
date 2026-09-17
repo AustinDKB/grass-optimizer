@@ -4,7 +4,7 @@ Daily watering and mowing schedule for a west-facing Martensville, SK yard (Scot
 
 Live on Tailscale only: [grass.austinbakanec.com](https://grass.austinbakanec.com) (same bind as sniper/pp — not on the public internet).
 
-Edit `yard.json` for live-feed knobs: `cycle_minutes`, `gpm`, `sqft`, last mow date, scheduled water minutes, soil `capacity_mm` / `trigger_mm`, `kc`, and mower deck. The daily snapshot copies those into `lawn_state.json` so the page does not hardcode them.
+Runs 7am / 12pm / 4pm **America/Regina** (Saskatchewan CST, no DST). Each run appends a newest-first ledger. Change knobs on the page (or in `yard.json`). Never mow on a watering day — cut the dry day before.
 
 ```bash
 python3 -m venv .venv
