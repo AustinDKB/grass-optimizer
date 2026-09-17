@@ -96,24 +96,51 @@ def decide_mow(
     winter: int = 0,
     interval: dict[str, int] | None = None,
     major_rain: float = MAJOR_RAIN,
+    watering_tomorrow: bool = False,
 ) -> bool:
-    if days_since <= 0:
+    if days_since <= 0 or watering_today:
         return False
     gap = (interval or INTERVAL)[growth]
     close = days_since >= max(gap - 2, 3)
-    if close and rain_24_48 >= major_rain:
+    due = days_since >= gap
+    if watering_tomorrow and (close or due):
         return True
-    if close and watering_today:
+    if close and rain_24_48 >= major_rain:
         return True
     if close and winter >= 1:
         return True
     if winter >= 2:
         return True
-    return days_since >= gap
+    return due
 
 
 def rain_soon(days: list[Day], i: int) -> float:
     return sum(d.rain for d in days[i + 1 : i + 3])
+
+
+def peek_tomorrow_water(
+    days: list[Day],
+    i: int,
+    balance: float,
+    today_manual: float,
+    soaked: bool,
+    watering_today: bool,
+    winter_today: int,
+    scheduled_water: dict[str, float],
+    yard: Yard,
+) -> bool:
+    if i + 1 >= len(days):
+        return False
+    day, nxt = days[i], days[i + 1]
+    et = et_mm(day.tmax, day.tmin, day.date, yard)
+    bal = step_balance(balance, day.rain, today_manual, et, yard.capacity_mm)
+    slice7 = days[i + 1 : i + 8]
+    winter = winter_status([d.tmax for d in slice7], [d.tmin for d in slice7])
+    soaked_next = soaked or (watering_today and winter_today >= 3)
+    _, watering = water_mm(
+        bal, scheduled_water.get(nxt.date, 0.0), winter, rain_soon(days, i + 1), soaked_next, yard
+    )
+    return watering
 
 
 def water_mm(
@@ -178,7 +205,7 @@ def note(out: Schedule, when: str, watering: bool, mow: bool, winter: int) -> No
         out.next_mow_date = out.next_mow_date or when
     if winter >= 3:
         out.last_water_of_season = out.last_water_of_season or when
-    if winter >= 2:
+    if mow and winter >= 2:
         out.last_mow_of_season = out.last_mow_of_season or when
 
 
@@ -212,7 +239,12 @@ def project_schedule(
         manual, watering = water_mm(
             balance, scheduled_water.get(day.date, 0.0), winter, coming, soaked, y
         )
-        mow = decide_mow(since, growth, coming, watering, winter, y.mow_interval_days, y.major_rain_mm)
+        tomorrow = peek_tomorrow_water(
+            days, i, balance, manual, soaked, watering, winter, scheduled_water, y
+        )
+        mow = decide_mow(
+            since, growth, coming, watering, winter, y.mow_interval_days, y.major_rain_mm, tomorrow
+        )
         note(out, day.date, watering, mow, winter)
         if i == 0:
             out.should_mow = mow
