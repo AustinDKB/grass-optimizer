@@ -5,21 +5,40 @@
   "grass": "Scotts Turf Builder Quick Thick Shade & Sun",
   "facing": "west",
   "light": "morning shade, afternoon sun",
-  "sqft": 1000,
-  "gpm": 4,
-  "cycle_minutes": 50,
+  "sqft": 1000.0,
+  "gpm": 4.0,
+  "cycle_minutes": 60.0,
   "mower_height_inches": 3.0,
   "mower_max_inches": 4.0,
-  "mower_deck": [1.25, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0],
-  "height_targets_in": [3.5, 2.75, 2.25, 2.25],
-  "capacity_mm": 25,
-  "trigger_mm": 10,
-  "major_rain_mm": 8,
-  "winter_soak_mm": 25,
+  "mower_deck": [
+    1.25,
+    1.5,
+    2.0,
+    2.5,
+    3.0,
+    3.5,
+    4.0
+  ],
+  "height_targets_in": [
+    3.5,
+    2.75,
+    2.25,
+    2.25
+  ],
+  "capacity_mm": 25.0,
+  "trigger_mm": 10.0,
+  "major_rain_mm": 8.0,
+  "winter_soak_mm": 25.0,
   "kc": 0.95,
   "et_factor": 1.0,
-  "mow_interval_days": { "low": 10, "medium": 7, "high": 5 },
+  "mow_interval_days": {
+    "low": 10,
+    "medium": 7,
+    "high": 5
+  },
   "last_mow_date": "2026-09-17",
-  "scheduled_water_minutes": { "2026-09-18": 50 },
-  "prior_balance_mm": 15
+  "scheduled_water_minutes": {
+    "2026-09-18": 60.0
+  },
+  "prior_balance_mm": 15.0
 }
