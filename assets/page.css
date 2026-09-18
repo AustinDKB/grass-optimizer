@@ -105,3 +105,22 @@ button.chip { cursor: pointer; font: inherit; }
 table.ledger { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 table.ledger th, table.ledger td { border-bottom: 1px solid var(--sk-ink); padding: 0.4rem 0.45rem; text-align: left; white-space: nowrap; }
 table.ledger th { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sk-muted); }
+table.kv { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+table.kv th {
+  width: 38%;
+  text-align: left;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sk-muted);
+  font-weight: 700;
+  padding: 0.45rem 0.75rem 0.45rem 0;
+  border-bottom: 1px solid var(--sk-ink);
+  vertical-align: top;
+  white-space: nowrap;
+}
+table.kv td {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--sk-ink);
+  font-weight: 600;
+}

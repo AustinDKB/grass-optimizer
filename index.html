@@ -43,18 +43,18 @@
 
     <div class="grid grid-2" style="margin-top:0.75rem">
       <div class="sk-panel" style="padding:1.1rem">
-        <h2 class="sk-title" style="margin:0 0 0.5rem;font-size:1rem">Why</h2>
-        <p id="why" style="margin:0;line-height:1.55"></p>
+        <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Why</h2>
+        <table class="kv" id="why"></table>
       </div>
       <div class="sk-panel" style="padding:1.1rem">
-        <h2 class="sk-title" style="margin:0 0 0.5rem;font-size:1rem">Jev</h2>
-        <p class="mono" id="jev" style="margin:0;font-size:0.85rem;line-height:1.7"></p>
+        <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Jev</h2>
+        <table class="kv" id="jev"></table>
       </div>
     </div>
 
     <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem" id="prev-panel">
-      <h2 class="sk-title" style="margin:0 0 0.5rem;font-size:1rem">Previous run</h2>
-      <p class="mono" id="prev" style="margin:0;font-size:0.85rem;line-height:1.7">no earlier run yet</p>
+      <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Previous run</h2>
+      <table class="kv" id="prev"></table>
     </div>
 
     <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
@@ -109,8 +109,9 @@
   <script>
     const fmt = (iso) => iso ? new Date(iso + "T12:00:00").toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" }) : "—";
     const yn = (v) => v ? "yes" : "no";
+    const n2 = (v) => (v == null || v === "") ? "—" : Number(v).toFixed(2);
+    const kv = (rows) => rows.map(([k, v]) => `<tr><th>${k}</th><td>${v ?? "—"}</td></tr>`).join("");
     const card = (label, when) => `<div class="sk-panel date-card"><div class="label">${label}</div><div class="when">${fmt(when)}</div><div class="mono muted" style="margin-top:0.2rem;font-size:0.75rem">${when || "not dated"}</div></div>`;
-    const prevLine = (p) => p ? `${p.ran_at || "—"} · bal ${p.balance_mm} mm · growth ${p.growth} · water ${yn(p.should_water)} · mow ${yn(p.should_mow)} · next water ${p.next_water || "—"} · next mow ${p.next_mow || "—"}` : "no earlier run yet";
 
     function paintState(d) {
       const a = d.lawn_action_items, s = d.schedule, j = d.jev || {}, f = d.feed || {};
@@ -153,12 +154,44 @@
         return `<span class="${cls}">${n}"</span>`;
       }).join("");
       document.getElementById("deck-note").textContent = "Gold = last cut (" + nowCut + "\"). Evergreen = recommended " + rec + "\". Never mow the same day you water.";
-      document.getElementById("why").textContent = d.reasoning_summary;
-      document.getElementById("jev").textContent =
-        "growth " + (j.growth_score ?? "—") + "  rain48 " + Number(j.significant_rain_24_48h || 0).toFixed(2) +
-        "\nmow-now " + Number(j.should_mow_now || 0).toFixed(2) + "  freeze " + Number(j.freeze_blowout_now || 0).toFixed(2) +
-        "\nregime " + (j.mower_regime || "—") + "  " + (j.model || "");
-      document.getElementById("prev").textContent = prevLine(d.previous_run);
+      document.getElementById("why").innerHTML = kv([
+        ["Yard", f.address || "Martensville, SK"],
+        ["Soil water", d.current_water_balance_mm.toFixed(1) + " mm of " + cap + " mm (trigger " + (f.trigger_mm || 10) + " mm)"],
+        ["Growth", d.estimated_growth_rate],
+        ["Water today", a.should_water ? "yes · " + a.target_water_amount_mm + " mm / " + (mins || cycleMin) + " min" : "no"],
+        ["Mow today", yn(a.should_mow) + " · never on a water day"],
+        ["Next water", fmt(s.next_water_date) + " · " + cycleMin + " min @ " + gpm + " GPM"],
+        ["Water again", fmt(s.following_water_date)],
+        ["Next mow", fmt(s.next_mow_date)],
+        ["Last soak", fmt(s.last_water_of_season)],
+        ["Last winter cut", fmt(s.last_mow_of_season)],
+        ["Frost watch", fmt(s.frost_watch_date)],
+        ["Season", a.is_winter_shutdown_triggered ? "lockdown" : "growing"],
+      ]);
+      document.getElementById("jev").innerHTML = kv([
+        ["Growth", (j.growth || d.estimated_growth_rate || "—") + " · score " + n2(j.growth_score) + " · conf " + n2(j.growth_confidence)],
+        ["Rain in 48h", n2(j.significant_rain_24_48h) + " (act ≥ 0.65)"],
+        ["Mow now", n2(j.should_mow_now) + " (act ≥ 0.65; blocked if watering)"],
+        ["Rain covers water", n2(j.rain_covers_watering)],
+        ["Freeze / blowout", n2(j.freeze_blowout_now)],
+        ["Mower regime", (j.mower_regime || "—") + " · conf " + n2(j.mower_regime_confidence)],
+        ["Model", j.model || "—"],
+      ]);
+      const p = d.previous_run;
+      document.getElementById("prev").innerHTML = p ? kv([
+        ["Ran (CST)", p.ran_at || "—"],
+        ["As of", p.as_of || "—"],
+        ["Soil water", (p.balance_mm ?? "—") + " mm"],
+        ["Growth", p.growth || "—"],
+        ["Water", p.should_water ? "yes · " + (p.target_mm ?? "—") + " mm / " + (p.target_minutes ?? p.cycle_minutes ?? "—") + " min" : "no"],
+        ["Mow", yn(p.should_mow)],
+        ["Next water", fmt(p.next_water)],
+        ["Water again", fmt(p.following_water)],
+        ["Next mow", fmt(p.next_mow)],
+        ["Deck rec", (p.height ?? "—") + '"'],
+        ["Lockdown", yn(p.shutdown)],
+        ["Jev growth / rain / freeze", n2(p.jev_growth) + " / " + n2(p.jev_rain48) + " / " + n2(p.jev_freeze)],
+      ]) : kv([["Status", "no earlier run yet"]]);
     }
 
     function paintLedger(rows) {
