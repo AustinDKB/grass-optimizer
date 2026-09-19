@@ -43,7 +43,7 @@ class DailyReport(BaseModel):
 
 
 class Yard(BaseModel):
-    address: str = "702B 1st Avenue North, Martensville, SK"
+    address: str = "mid saskatchewan"
     lat: float = 52.2897
     lon: float = -106.6667
     grass: str = "Scotts Turf Builder Quick Thick Shade & Sun"
