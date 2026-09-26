@@ -8,7 +8,7 @@
   "sqft": 1000.0,
   "gpm": 4.0,
   "cycle_minutes": 60.0,
-  "mower_height_inches": 3.0,
+  "mower_height_inches": 3.5,
   "mower_max_inches": 4.0,
   "mower_deck": [
     1.25,
@@ -36,9 +36,9 @@
     "medium": 7,
     "high": 5
   },
-  "last_mow_date": "2026-09-17",
+  "last_mow_date": "2026-09-22",
   "scheduled_water_minutes": {
-    "2026-09-18": 60.0
+    "2026-09-23": 60.0
   },
   "prior_balance_mm": 15.0
 }
