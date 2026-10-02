@@ -32,10 +32,14 @@ class ScheduleOut(BaseModel):
 
 class DailyReport(BaseModel):
     current_water_balance_mm: float
+    snowpack_mm: float = 0.0
     estimated_growth_rate: Literal["low", "medium", "high"]
     lawn_action_items: LawnActionItems
     reasoning_summary: str
     schedule: ScheduleOut
+    winter_phase: int = 0
+    spring_phase: int = 0
+    checklist: list[dict] = Field(default_factory=list)
     jev: dict = Field(default_factory=dict)
     as_of: str | None = None
     feed: dict = Field(default_factory=dict)
