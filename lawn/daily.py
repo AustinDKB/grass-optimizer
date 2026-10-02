@@ -282,16 +282,17 @@ def run() -> DailyReport:
         jev = formula_signals(forecast, growth, yard)
     sched = project_schedule(forecast, balance, since_mow, growth, manuals, yard)
     spring = spring_status(highs, lows, pack, yard)
+    spring_active = in_spring_season(forecast[0].date)
+    spring_out = spring if spring_active else 0
     if not sched.last_water_of_season:
         last_mow, last_water = season_end(forecast + fetch_horizon(key, yard, today))
         sched.last_mow_of_season = sched.last_mow_of_season or last_mow
         sched.last_water_of_season = last_water
     sched.frost_watch_date = next((d.date for d in forecast if d.tmin <= 1), None)
-    # Pre-merge water/mow flags for checklist (approximate; merge recomputes)
-    probe = merge(sched, jev, balance, loc, yard, forecast[0].date, pack=pack, spring=spring)
+    probe = merge(sched, jev, balance, loc, yard, forecast[0].date, pack=pack, spring=spring_out)
     checklist = evaluate_checklist(
         winter=sched.winter,
-        spring=spring,
+        spring=spring_out,
         soil_mm=balance,
         pack_mm=pack,
         forecast=forecast,
@@ -299,8 +300,21 @@ def run() -> DailyReport:
         days_since_mow=since_mow,
         should_water=probe.lawn_action_items.should_water,
     )
+    if not spring_active:
+        checklist = [
+            {
+                **c,
+                "status": "wait" if c["status"] == "eligible" else c["status"],
+                "reason": (
+                    c["reason"] + " · outside Mar–Jun spring window"
+                    if c["status"] == "eligible"
+                    else c["reason"]
+                ),
+            }
+            for c in checklist
+        ]
     report = merge(
-        sched, jev, balance, loc, yard, forecast[0].date, pack=pack, spring=spring, checklist=checklist
+        sched, jev, balance, loc, yard, forecast[0].date, pack=pack, spring=spring_out, checklist=checklist
     )
     ran_at = now_cst()
     rows = record_ledger(ledger_entry(report, ran_at))
