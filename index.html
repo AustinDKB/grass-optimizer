@@ -25,6 +25,7 @@
       <span class="chip" id="today-water">Water today?</span>
       <span class="chip" id="today-mow">Mow today?</span>
       <span class="chip" id="shutdown">Winter lockdown</span>
+      <span class="chip" id="phase">Phase</span>
     </div>
 
     <div class="grid grid-4" id="dates"></div>
@@ -33,6 +34,7 @@
       <div class="label muted mono" style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase" id="soil-label">Soil water</div>
       <div class="meter" style="margin:0.55rem 0"><span id="bar" style="width:0%"></span></div>
       <p class="mono" id="balance" style="margin:0;font-weight:600"></p>
+      <p class="mono muted" id="pack" style="margin:0.35rem 0 0;font-size:0.9rem"></p>
     </div>
 
     <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
@@ -47,9 +49,15 @@
         <table class="kv" id="why"></table>
       </div>
       <div class="sk-panel" style="padding:1.1rem">
-        <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Jev</h2>
+        <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Signals</h2>
         <table class="kv" id="jev"></table>
       </div>
+    </div>
+
+    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
+      <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Spring checklist</h2>
+      <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem">Optional · weather-gated · Mar–Jun focus · suggestions only</p>
+      <table class="kv" id="checklist"></table>
     </div>
 
     <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem" id="prev-panel">
@@ -135,6 +143,10 @@
       document.getElementById("today-mow").textContent = a.should_mow ? "Mow today" : "No mow today";
       document.getElementById("today-mow").className = "chip " + (a.should_mow ? "go" : "stop");
       document.getElementById("shutdown").textContent = a.is_winter_shutdown_triggered ? "Lockdown" : "Growing season";
+      const rec = a.recommended_mower_height_inches;
+      const wp = d.winter_phase ?? f.winter_phase ?? "—";
+      const sp = d.spring_phase ?? f.spring_phase ?? "—";
+      document.getElementById("phase").textContent = "W" + wp + " / S" + sp + " · " + rec + '"';
       document.getElementById("dates").innerHTML = [
         card("Water next", s.next_water_date),
         card("Water again", s.following_water_date),
@@ -147,7 +159,8 @@
       document.getElementById("balance").textContent =
         d.current_water_balance_mm.toFixed(1) + " mm  ·  " + a.target_water_amount_mm + " mm / " +
         (mins || 0) + " min if watering";
-      const rec = a.recommended_mower_height_inches;
+      document.getElementById("pack").textContent =
+        "Snowpack (SWE) " + n2(d.snowpack_mm ?? f.snowpack_mm ?? 0) + " mm · melts into soil when highs > 0°C";
       document.getElementById("deck-label").textContent = "Mower deck — current cut " + nowCut + '" · max ' + maxCut + '"';
       document.getElementById("deck").innerHTML = deck.map((n) => {
         const cls = n === nowCut ? "notch now" : (n === rec ? "notch rec" : "notch");
@@ -157,6 +170,7 @@
       document.getElementById("why").innerHTML = kv([
         ["Yard", f.address || "Martensville, SK"],
         ["Soil water", d.current_water_balance_mm.toFixed(1) + " mm of " + cap + " mm (trigger " + (f.trigger_mm || 10) + " mm)"],
+        ["Snowpack", n2(d.snowpack_mm ?? f.snowpack_mm) + " mm SWE"],
         ["Growth", d.estimated_growth_rate],
         ["Water today", a.should_water ? "yes · " + a.target_water_amount_mm + " mm / " + (mins || cycleMin) + " min" : "no"],
         ["Mow today", yn(a.should_mow) + " · never on a water day"],
@@ -166,6 +180,7 @@
         ["Last soak", fmt(s.last_water_of_season)],
         ["Last winter cut", fmt(s.last_mow_of_season)],
         ["Frost watch", fmt(s.frost_watch_date)],
+        ["Winter / spring phase", String(wp) + " / " + String(sp)],
         ["Season", a.is_winter_shutdown_triggered ? "lockdown" : "growing"],
       ]);
       document.getElementById("jev").innerHTML = kv([
@@ -177,6 +192,10 @@
         ["Mower regime", (j.mower_regime || "—") + " · conf " + n2(j.mower_regime_confidence)],
         ["Model", j.model || "—"],
       ]);
+      const checklist = d.checklist || [];
+      document.getElementById("checklist").innerHTML = checklist.length
+        ? kv(checklist.map((c) => [c.id, (c.status || "—") + " — " + (c.reason || "")]))
+        : kv([["Status", "no checklist on this snapshot"]]);
       const p = d.previous_run;
       document.getElementById("prev").innerHTML = p ? kv([
         ["Ran (CST)", p.ran_at || "—"],

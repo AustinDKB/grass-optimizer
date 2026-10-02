@@ -223,7 +223,7 @@ class MergeTests(unittest.TestCase):
             "mower_regime": "final",
             "model": "test",
         }
-        report = merge(sched, jev, 10, {"name": "Warman", "region": "Saskatchewan"})
+        report = merge(sched, jev, 10, {"name": "Warman", "region": "Saskatchewan"}, as_of="2026-09-17")
         self.assertEqual(report.lawn_action_items.recommended_mower_height_inches, 2.5)
         self.assertTrue(report.lawn_action_items.should_water)
         self.assertFalse(report.lawn_action_items.should_mow)

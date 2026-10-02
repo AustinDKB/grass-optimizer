@@ -117,6 +117,24 @@ def consistently_below(vals: list[float], cap: float) -> bool:
     return sum(v < cap for v in vals) >= need
 
 
+def consistently_at_least(vals: list[float], floor: float) -> bool:
+    if not vals:
+        return False
+    need = max(1, -(-len(vals) * 7 // 10))
+    return sum(v >= floor for v in vals) >= need
+
+
+def growth_from_highs(highs: list[float]) -> str:
+    if not highs:
+        return "low"
+    mean = sum(highs) / len(highs)
+    if mean < 15:
+        return "low"
+    if mean <= 22:
+        return "medium"
+    return "high"
+
+
 def winter_status(highs: list[float], lows: list[float]) -> int:
     if any(t <= 0 for t in lows):
         return 3
@@ -125,6 +143,45 @@ def winter_status(highs: list[float], lows: list[float]) -> int:
     if consistently_below(highs, 15):
         return 1
     return 0
+
+
+def spring_heights(yard: Yard | None = None) -> tuple[float, ...]:
+    y = yard or Yard()
+    return tuple(snap_deck(h, y.mower_deck) for h in y.spring_heights_in)
+
+
+def spring_status(
+    highs: list[float], lows: list[float], pack_mm: float, yard: Yard | None = None
+) -> int:
+    y = yard or Yard()
+    if any(t <= 0 for t in lows) or pack_mm > y.spring_pack_clear_mm:
+        return 0
+    if consistently_below(highs, y.spring_green_high_c):
+        return 0
+    if consistently_at_least(highs, y.spring_summer_high_c) and pack_mm <= 0.05:
+        return 2
+    if consistently_at_least(highs, y.spring_green_high_c):
+        return 1
+    return 0
+
+
+def season_height(winter: int, spring: int, yard: Yard | None = None) -> float:
+    y = yard or Yard()
+    wh, sh = heights(y), spring_heights(y)
+    if winter >= 3:
+        return wh[3]
+    if winter >= 2:
+        return wh[2]
+    if winter >= 1:
+        return wh[1]
+    # Winter clear: spring ladder (or summer height)
+    return sh[min(max(spring, 0), len(sh) - 1)]
+
+
+def in_spring_season(iso: str | None) -> bool:
+    if not iso or len(iso) < 7:
+        return False
+    return iso[5:7] in {"03", "04", "05", "06"}
 
 
 def decide_mow(
