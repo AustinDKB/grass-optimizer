@@ -71,6 +71,45 @@ def step_balance(prev: float, rain: float, manual: float, et: float, capacity: f
     return min(capacity, max(0.0, prev + rain + manual - et))
 
 
+def melt_cap(tmax: float, yard: Yard | None = None) -> float:
+    y = yard or Yard()
+    return max(0.0, float(tmax)) * y.melt_factor_mm_per_c
+
+
+def step_moisture(
+    soil: float, pack: float, day: Day, manual: float, yard: Yard | None = None
+) -> tuple[float, float]:
+    """One day: freezing precip → pack; melt + liquid + irrigation → soil; then ET."""
+    y = yard or Yard()
+    soil, pack = float(soil), float(pack)
+    precip, manual = float(day.rain), float(manual)
+    if day.tmax <= 0:
+        pack += precip
+        soil = step_balance(soil, 0.0, manual, 0.0, y.capacity_mm)
+        return soil, pack
+    melt = min(pack, melt_cap(day.tmax, y))
+    pack -= melt
+    soil = step_balance(soil, precip + melt, manual, et_mm(day.tmax, day.tmin, day.date, y), y.capacity_mm)
+    return soil, pack
+
+
+def replay_moisture(
+    days: list[Day],
+    start_soil: float = 15.0,
+    start_pack: float = 0.0,
+    manuals: dict[str, float] | None = None,
+    yard: Yard | None = None,
+    since: str | None = None,
+) -> tuple[float, float]:
+    y, manuals = yard or Yard(), manuals or {}
+    soil, pack = float(start_soil), float(start_pack)
+    for d in days:
+        if since is not None and d.date < since:
+            continue
+        soil, pack = step_moisture(soil, pack, d, manuals.get(d.date, 0.0), y)
+    return soil, pack
+
+
 def consistently_below(vals: list[float], cap: float) -> bool:
     if not vals:
         return False
