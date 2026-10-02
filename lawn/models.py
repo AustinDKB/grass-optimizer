@@ -60,9 +60,16 @@ class Yard(BaseModel):
     trigger_mm: float = 10
     major_rain_mm: float = 8
     winter_soak_mm: float = 25
+    melt_factor_mm_per_c: float = 2.0
+    spring_green_high_c: float = 10.0
+    spring_summer_high_c: float = 15.0
+    spring_pack_clear_mm: float = 5.0
+    spring_heights_in: list[float] = Field(default_factory=lambda: [2.5, 3.0, 3.5, 3.5])
+    checklist_enabled: dict[str, bool] = Field(default_factory=dict)
     kc: float = 0.95
     et_factor: float = 1.0
     mow_interval_days: dict[str, int] = Field(default_factory=lambda: {"low": 10, "medium": 7, "high": 5})
     last_mow_date: str = "2026-09-17"
     scheduled_water_minutes: dict[str, float] = Field(default_factory=lambda: {"2026-09-18": 50})
     prior_balance_mm: float = 15
+    prior_snowpack_mm: float = 0.0
