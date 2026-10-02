@@ -9,7 +9,7 @@ Runs 7am / 12pm / 4pm **America/Regina** (Saskatchewan CST, no DST). Each run ap
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-cp .env.example .env   # TYPESAFE_API_KEY + WEATHERAPI_KEY
+cp .env.example .env   # TYPESAFE_API_KEY + OPENWEATHER_API_KEY (One Call 3.0)
 .venv/bin/python -m lawn
 ```
 

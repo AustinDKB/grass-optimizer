@@ -195,7 +195,8 @@ def publish() -> None:
 def run() -> DailyReport:
     load_env()
     yard = load_yard()
-    loc, history, forecast = fetch_weather(os.environ["WEATHERAPI_KEY"], yard)
+    key = os.environ.get("OPENWEATHER_API_KEY") or os.environ["WEATHERAPI_KEY"]
+    loc, history, forecast = fetch_weather(key, yard)
     today = date.fromisoformat(forecast[0].date)
     manuals = manuals_mm(yard)
     saved_as_of, saved_bal = load_saved()
@@ -207,9 +208,7 @@ def run() -> DailyReport:
     jev = ask_jev(yard, loc, history, forecast, balance, since_mow)
     sched = project_schedule(forecast, balance, since_mow, jev["growth"], manuals, yard)
     if not sched.last_water_of_season:
-        last_mow, last_water = season_end(
-            forecast + fetch_horizon(os.environ["WEATHERAPI_KEY"], yard, today)
-        )
+        last_mow, last_water = season_end(forecast + fetch_horizon(key, yard, today))
         sched.last_mow_of_season = sched.last_mow_of_season or last_mow
         sched.last_water_of_season = last_water
     sched.frost_watch_date = next((d.date for d in forecast if d.tmin <= 1), None)
@@ -220,29 +219,6 @@ def run() -> DailyReport:
     report.feed = {**report.feed, "ran_at": ran_at, "ledger_count": len(rows)}
     (ROOT / "lawn_state.json").write_text(report.model_dump_json(indent=2))
     publish()
-    return report
-    load_env()
-    yard = load_yard()
-    loc, history, forecast = fetch_weather(os.environ["WEATHERAPI_KEY"], yard)
-    today = date.fromisoformat(forecast[0].date)
-    manuals = manuals_mm(yard)
-    saved_as_of, saved_bal = load_saved()
-    if saved_as_of is not None and saved_bal is not None:
-        balance = replay(history, start=saved_bal, manuals=manuals, yard=yard, since=saved_as_of)
-    else:
-        balance = replay(history, start=yard.prior_balance_mm, manuals=manuals, yard=yard)
-    since_mow = days_since_mow(today, yard.last_mow_date)
-    jev = ask_jev(yard, loc, history, forecast, balance, since_mow)
-    sched = project_schedule(forecast, balance, since_mow, jev["growth"], manuals, yard)
-    if not sched.last_water_of_season:
-        last_mow, last_water = season_end(
-            forecast + fetch_horizon(os.environ["WEATHERAPI_KEY"], yard, today)
-        )
-        sched.last_mow_of_season = sched.last_mow_of_season or last_mow
-        sched.last_water_of_season = last_water
-    sched.frost_watch_date = next((d.date for d in forecast if d.tmin <= 1), None)
-    report = merge(sched, jev, balance, loc, yard, forecast[0].date)
-    (ROOT / "lawn_state.json").write_text(report.model_dump_json(indent=2))
     return report
 
 
