@@ -119,14 +119,14 @@ The existing 7am/12pm/4pm timer must keep running in winter. If a gap appears, s
 
 Spring phases only apply when leaving lockdown / after sustained thaw (e.g. no ≤0°C night in window and highs recovering). Ladder **up** for durability (never scalp early):
 
-| Phase | Gate (sketch) | Height | Intent |
+| Phase | Gate (defaults; overridable in `yard.json`) | Height | Intent |
 |---|---|---|---|
-| S0 dormant/thaw | soil/pack thawing; growth off | no mow (or hold last winter height) | Don’t cut soft/dormant turf |
-| S1 green-up | highs mostly ≥ ~10–12°C, growth starting | 3.0" first cuts | Raise from winter short cut gradually |
-| S2 established | highs mostly ≥ ~15°C, active growth | 3.5" | Full summer height |
-| S3 summer | stable warm | 3.5" | Hand off to existing summer rules |
+| S0 dormant/thaw | any night ≤ 0°C in window **or** snowpack_mm &gt; 5 **or** highs mostly &lt; 10°C | no mow (hold last winter height) | Don’t cut soft/dormant turf |
+| S1 green-up | no ≤0°C night; pack ≤ 5 mm; ≥70% of highs ≥ 10°C | 3.0" first cuts | Raise from winter short cut gradually |
+| S2 established | pack ≈ 0; ≥70% of highs ≥ 15°C | 3.5" | Full summer height |
+| S3 summer | same warm window holds 7+ days (or calendar handoff once S2 stable) | 3.5" | Hand off to existing summer rules |
 
-Exact thresholds live in `yard.json` next to winter knobs so Martensville can be tuned without code edits.
+Winter vs spring: if lockdown (winter 3) applies, it wins. Spring ladder is evaluated only when winter phase ≤ 1.
 
 Growth label (mow interval) from formulas, not Jev:
 
