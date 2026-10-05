@@ -79,10 +79,10 @@ class WinterTests(unittest.TestCase):
         lows = [2, 1, 1, 2, 1, 0.5, 2]
         self.assertEqual(winter_status(highs, lows), 2)
 
-    def test_lockdown_when_a_night_hits_freezing(self):
+    def test_a_frost_night_alone_is_not_a_lockdown(self):
         highs = [12, 10, 9, 8, 7, 6, 5]
         lows = [4, 3, 2, 1, 0, -2, -4]
-        self.assertEqual(winter_status(highs, lows), 3)
+        self.assertEqual(winter_status(highs, lows), 1)  # highs say "slowing"; growth goes on
 
 
 def _days(start: date, highs, lows, rain):
@@ -114,7 +114,7 @@ class ScheduleTests(unittest.TestCase):
         self.assertIsNotNone(sched.following_water_date)
         self.assertGreater(sched.following_water_date, "2026-09-18")
 
-    def test_last_water_and_mow_follow_winter_steps(self):
+    def test_final_soak_on_cleanup_day_then_no_water(self):
         days = _days(
             date(2026, 9, 17),
             highs=[14, 13, 12, 10, 8, 7, 6],
@@ -127,12 +127,14 @@ class ScheduleTests(unittest.TestCase):
             days_since_mow=8,
             growth="low",
             scheduled_water={},
+            cleanup="2026-09-17",
         )
-        # Freeze soak is today — water first; cut is not the same (wet) day.
+        # Final soak fills the soil to capacity on cleanup day; no cut on that (wet) day.
         self.assertEqual(sched.last_water_of_season, "2026-09-17")
         self.assertTrue(sched.should_water)
+        self.assertAlmostEqual(sched.target_water_mm, 7.0)
         self.assertFalse(sched.should_mow)
-        self.assertNotEqual(sched.last_mow_of_season, sched.last_water_of_season)
+        self.assertEqual([w[0] for w in sched.waters], ["2026-09-17"])
 
 
 class HorizonTests(unittest.TestCase):
@@ -199,7 +201,7 @@ class ConfigTests(unittest.TestCase):
 
 
 class MergeTests(unittest.TestCase):
-    def test_lockdown_height_is_a_real_deck_notch(self):
+    def test_dormant_means_all_off_and_height_is_a_real_deck_notch(self):
         from lawn.daily import merge
         from lawn.rules import Schedule
         sched = Schedule(
@@ -225,7 +227,8 @@ class MergeTests(unittest.TestCase):
         }
         report = merge(sched, jev, 10, {"name": "Warman", "region": "Saskatchewan"}, as_of="2026-09-17")
         self.assertEqual(report.lawn_action_items.recommended_mower_height_inches, 2.5)
-        self.assertTrue(report.lawn_action_items.should_water)
+        self.assertTrue(report.lawn_action_items.is_winter_shutdown_triggered)
+        self.assertFalse(report.lawn_action_items.should_water)
         self.assertFalse(report.lawn_action_items.should_mow)
         self.assertEqual(report.feed["cycle_minutes"], 50)
         self.assertEqual(report.feed["gpm"], 4)

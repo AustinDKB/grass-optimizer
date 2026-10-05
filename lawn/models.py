@@ -24,10 +24,16 @@ class LawnActionItems(BaseModel):
 class ScheduleOut(BaseModel):
     next_water_date: str | None
     following_water_date: str | None = None
+    next_water_mm: float = 0.0
+    following_water_mm: float = 0.0
     next_mow_date: str | None
+    next_mow_height: float | None = None
     last_water_of_season: str | None
     last_mow_of_season: str | None
     frost_watch_date: str | None = None
+    final_soak_mm: float = 0.0
+    mows: list = Field(default_factory=list)
+    waters: list = Field(default_factory=list)
 
 
 class DailyReport(BaseModel):
@@ -43,6 +49,7 @@ class DailyReport(BaseModel):
     jev: dict = Field(default_factory=dict)
     as_of: str | None = None
     feed: dict = Field(default_factory=dict)
+    fall: dict = Field(default_factory=dict)
     previous_run: dict | None = None
 
 
@@ -63,7 +70,6 @@ class Yard(BaseModel):
     capacity_mm: float = 25
     trigger_mm: float = 10
     major_rain_mm: float = 8
-    winter_soak_mm: float = 25
     melt_factor_mm_per_c: float = 2.0
     spring_green_high_c: float = 10.0
     spring_summer_high_c: float = 15.0
@@ -74,6 +80,15 @@ class Yard(BaseModel):
     et_factor: float = 1.0
     mow_interval_days: dict[str, int] = Field(default_factory=lambda: {"low": 10, "medium": 7, "high": 5})
     last_mow_date: str = "2026-09-17"
+    mow_log: dict[str, float] = Field(default_factory=dict)
+    height_log: dict[str, float] = Field(default_factory=dict)  # measured blade height, inches
+    growth_rate_in_day: float = 0.15  # blade growth at 20 °C mean air and warm soil
+    hose_ice_in: float = 0.25  # ice in the hose that forces the cleanup
+    hose_margin_c: float = 2.0  # ground-level air runs colder than the 2 m forecast on clear nights
+    hose_risk_pct: float = 20  # climate fallback: date by which this % of past years froze
+    dormant_soil_c: float = 5.0  # soil (6 cm) daily mean below this ...
+    dormant_days: int = 5  # ... for this many days in a row = growth stopped, all off
+    frost_c: float = 1.0  # low at or below this = frost warning
     scheduled_water_minutes: dict[str, float] = Field(default_factory=lambda: {"2026-09-18": 50})
     prior_balance_mm: float = 15
     prior_snowpack_mm: float = 0.0

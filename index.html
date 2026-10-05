@@ -18,94 +18,137 @@
         <h1 class="sk-title" style="margin:0.4rem 0 0;font-size:clamp(1.6rem,4vw,2.4rem)">Grass Optimizer</h1>
         <p class="muted" style="margin:0.35rem 0 0" id="place">loading yard…</p>
       </div>
-      <p class="mono muted" id="updated">loading snapshot…</p>
+      <p class="mono muted" style="margin:0;font-size:0.85rem" id="updated">loading snapshot…</p>
     </header>
 
     <div class="row" style="margin-bottom:1rem">
       <span class="chip" id="today-water">Water today?</span>
       <span class="chip" id="today-mow">Mow today?</span>
-      <span class="chip" id="shutdown">Winter lockdown</span>
+      <span class="chip" id="shutdown">Season</span>
       <span class="chip" id="phase">Phase</span>
     </div>
 
+    <p class="frost" id="frost" hidden></p>
+
     <div class="grid grid-4" id="dates"></div>
 
-    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
-      <div class="label muted mono" style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase" id="soil-label">Soil water</div>
+    <div class="sk-panel panel">
+      <div class="muted mono" style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase" id="soil-label">Soil water</div>
       <div class="meter" style="margin:0.55rem 0"><span id="bar" style="width:0%"></span></div>
       <p class="mono" id="balance" style="margin:0;font-weight:600"></p>
-      <p class="mono muted" id="pack" style="margin:0.35rem 0 0;font-size:0.9rem"></p>
+      <p class="mono muted" id="pack" style="margin:0.35rem 0 0;font-size:0.85rem"></p>
     </div>
 
-    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
+    <div class="sk-panel panel">
       <div class="muted" style="font-size:0.85rem;margin-bottom:0.5rem" id="deck-label">Mower deck</div>
       <div class="row" id="deck"></div>
-      <p class="muted" style="margin:0.65rem 0 0;font-size:0.9rem" id="deck-note"></p>
+      <p class="muted" style="margin:0.65rem 0 0;font-size:0.85rem" id="deck-note"></p>
+    </div>
+
+    <div class="sk-panel panel">
+      <h2 class="sk-title">Next 16 days</h2>
+      <p class="muted lede">Soil °C at 6 cm: measured / forecast (7 days) / model (lags the air). Growth = inches per day from air and soil temperature.</p>
+      <div class="scroll">
+        <table class="ledger plan" id="plan">
+          <thead><tr><th>Day</th><th class="num">Soil °C</th><th class="num">Grow in</th><th>Plan</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="grid grid-2" style="margin-top:0.75rem">
-      <div class="sk-panel" style="padding:1.1rem">
-        <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Why</h2>
+      <div class="sk-panel panel">
+        <h2 class="sk-title">Why</h2>
         <table class="kv" id="why"></table>
       </div>
-      <div class="sk-panel" style="padding:1.1rem">
-        <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Signals</h2>
+      <div class="sk-panel panel">
+        <h2 class="sk-title">Signals</h2>
         <table class="kv" id="jev"></table>
       </div>
     </div>
 
-    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
-      <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Spring checklist</h2>
-      <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem">Optional · weather-gated · Mar–Jun focus · suggestions only</p>
+    <div class="sk-panel panel">
+      <h2 class="sk-title">Spring checklist</h2>
+      <p class="muted lede">Optional · weather-gated · Mar–Jun focus · suggestions only</p>
       <table class="kv" id="checklist"></table>
     </div>
 
-    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem" id="prev-panel">
-      <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Previous run</h2>
+    <div class="sk-panel panel" id="prev-panel">
+      <h2 class="sk-title">Previous run</h2>
       <table class="kv" id="prev"></table>
     </div>
 
-    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
-      <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Settings</h2>
-      <p class="muted" style="margin:0 0 0.75rem;font-size:0.85rem">Tailscale only. Watering never shares a day with mowing — cut the dry day before.</p>
-      <form id="yard-form" class="form-grid">
-        <label class="field">Cycle minutes <input name="cycle_minutes" type="number" step="1" min="1" required /></label>
-        <label class="field">GPM <input name="gpm" type="number" step="0.1" min="0.1" required /></label>
-        <label class="field">Yard sqft <input name="sqft" type="number" step="1" min="1" required /></label>
-        <label class="field">Last mow date <input name="last_mow_date" type="date" required /></label>
-        <label class="field">Capacity mm <input name="capacity_mm" type="number" step="0.1" min="1" required /></label>
-        <label class="field">Trigger mm <input name="trigger_mm" type="number" step="0.1" min="0" required /></label>
-        <label class="field">Kc <input name="kc" type="number" step="0.01" min="0.1" required /></label>
-        <label class="field">ET factor <input name="et_factor" type="number" step="0.01" min="0.1" required /></label>
-        <label class="field">Current cut (in) <input name="mower_height_inches" type="number" step="0.25" required /></label>
-        <label class="field">Mow interval low/med/high
-          <input name="intervals" type="text" placeholder="10 7 5" />
-        </label>
-        <label class="field" style="grid-column:1/-1">Scheduled water (one per line: YYYY-MM-DD minutes)
-          <textarea name="scheduled" rows="3" placeholder="2026-09-18 50"></textarea>
-        </label>
-        <div class="row" style="grid-column:1/-1">
+    <div class="sk-panel panel">
+      <h2 class="sk-title">Lawn log</h2>
+      <p class="muted lede">
+        Every water and cut you did. The latest cut sets the deck height and mow schedule.
+        Add a "measure" row (blade height with a ruler, before you mow) to correct the growth estimate.
+        One water and one cut per day; never both on the same day.
+      </p>
+      <div class="scroll">
+        <table class="log" id="action-log">
+          <colgroup><col class="c-date" /><col class="c-action" /><col class="c-amount" /><col class="c-del" /></colgroup>
+          <thead>
+            <tr><th>Date</th><th>Action</th><th>Amount</th><th><span class="muted" style="font-size:0">Delete</span></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="warn" id="log-warn"></p>
+      <div class="row" style="margin-top:0.75rem">
+        <button type="button" class="chip" id="add-action">+ Add row</button>
+        <button type="button" class="chip go" id="save-log">Save log</button>
+        <span class="mono muted status" id="form-status" role="status"></span>
+      </div>
+    </div>
+
+    <div class="sk-panel panel">
+      <h2 class="sk-title">Settings</h2>
+      <p class="muted lede">Yard knobs. Water and cut history lives in the log above.</p>
+      <form id="yard-form" class="form-grid" novalidate>
+        <label class="field">Cycle minutes <input name="cycle_minutes" type="number" inputmode="decimal" step="any" min="1" required /></label>
+        <label class="field">Flow (GPM) <input name="gpm" type="number" inputmode="decimal" step="any" min="0.1" required /></label>
+        <label class="field">Yard sqft <input name="sqft" type="number" inputmode="numeric" step="any" min="1" required /></label>
+        <label class="field">Soil capacity (mm) <input name="capacity_mm" type="number" inputmode="decimal" step="any" min="1" required /></label>
+        <label class="field">Water trigger (mm) <input name="trigger_mm" type="number" inputmode="decimal" step="any" min="0" required /></label>
+        <label class="field">Crop factor Kc <input name="kc" type="number" inputmode="decimal" step="any" min="0.1" max="2" required /></label>
+        <label class="field">ET factor <input name="et_factor" type="number" inputmode="decimal" step="any" min="0.1" max="3" required /></label>
+        <label class="field">Growth at 20 °C (in/day) <input name="growth_rate_in_day" type="number" inputmode="decimal" step="any" min="0" max="1" required /><span class="hint muted">Correct it with "measure" rows in the log</span></label>
+        <label class="field">Hose ice (in) <input name="hose_ice_in" type="number" inputmode="decimal" step="any" min="0.05" max="2" required /><span class="hint muted">Ice in the hose that forces the cleanup</span></label>
+        <label class="field">Hose cold margin (°C) <input name="hose_margin_c" type="number" inputmode="decimal" step="any" min="0" max="10" required /><span class="hint muted">Ground air is colder than the forecast</span></label>
+        <label class="field">Climate risk (%) <input name="hose_risk_pct" type="number" inputmode="numeric" step="1" min="1" max="100" required /><span class="hint muted">Past the forecast: date this % of past years froze</span></label>
+        <label class="field">Grass stops below (°C soil) <input name="dormant_soil_c" type="number" inputmode="decimal" step="any" min="0" max="15" required /></label>
+        <label class="field">… for days in a row <input name="dormant_days" type="number" inputmode="numeric" step="1" min="1" max="14" required /></label>
+        <fieldset class="field wide" style="border:0;padding:0;margin:0">
+          <legend style="padding:0;margin-bottom:0.25rem">Mow every N days, by growth</legend>
+          <div class="triple">
+            <label>Low <input name="iv_low" type="number" inputmode="numeric" step="1" min="1" max="60" required /></label>
+            <label>Medium <input name="iv_medium" type="number" inputmode="numeric" step="1" min="1" max="60" required /></label>
+            <label>High <input name="iv_high" type="number" inputmode="numeric" step="1" min="1" max="60" required /></label>
+          </div>
+        </fieldset>
+        <div class="row full">
           <button type="submit" class="chip go" id="save-btn">Save settings</button>
-          <button type="button" class="chip" id="run-btn">Save &amp; run now</button>
-          <span class="mono muted" id="form-status"></span>
+          <span class="mono muted status" id="settings-status" role="status"></span>
         </div>
       </form>
     </div>
 
-    <div class="sk-panel" style="padding:1.1rem;margin-top:0.75rem">
-      <h2 class="sk-title" style="margin:0 0 0.65rem;font-size:1rem">Run ledger</h2>
-      <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem">Newest first · 7am / 12pm / 4pm America/Regina (CST, no DST)</p>
-      <div style="overflow-x:auto">
+    <div class="sk-panel panel">
+      <h2 class="sk-title">Run ledger</h2>
+      <p class="muted lede">Newest first · one row per day · runs 7am America/Regina (CST); saving the log or settings updates today's row</p>
+      <div class="scroll">
         <table class="ledger" id="ledger">
           <thead>
             <tr>
-              <th>Ran (CST)</th><th>As of</th><th>Bal mm</th><th>Growth</th>
-              <th>Water</th><th>Mow</th><th>Min</th><th>Next water</th><th>Next mow</th>
+              <th>Ran (CST)</th><th>As of</th><th class="num">Soil mm</th><th>Growth</th>
+              <th>Water</th><th>Mow</th><th class="num">Min</th><th>Next water</th><th>Next mow</th>
             </tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
+      <button type="button" class="chip more" id="ledger-more" hidden></button>
     </div>
 
     <p class="muted" style="margin-top:1.5rem;font-size:0.85rem">
@@ -115,196 +158,420 @@
     </p>
   </div>
   <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const fmt = (iso) => iso ? new Date(iso + "T12:00:00").toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" }) : "—";
+    const short = (iso) => iso ? new Date(iso + "T12:00:00").toLocaleDateString("en-CA", { month: "short", day: "numeric" }) : "—";
+    // "2026-10-05T11:22-06:00" -> "Mon, Oct 5 · 11:22" (stamps are already CST)
+    const stamp = (s) => {
+      const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(s || "");
+      return m ? fmt(m[1]) + " · " + m[2] : (s || "—");
+    };
     const yn = (v) => v ? "yes" : "no";
     const n2 = (v) => (v == null || v === "") ? "—" : Number(v).toFixed(2);
-    const kv = (rows) => rows.map(([k, v]) => `<tr><th>${k}</th><td>${v ?? "—"}</td></tr>`).join("");
-    const card = (label, when) => `<div class="sk-panel date-card"><div class="label">${label}</div><div class="when">${fmt(when)}</div><div class="mono muted" style="margin-top:0.2rem;font-size:0.75rem">${when || "not dated"}</div></div>`;
+    const n1 = (v) => (v == null || v === "") ? "—" : Number(v).toFixed(1);
+    const mins = (v) => (v == null || v === "") ? "—" : Math.round(Number(v)) + " min";
+    const kv = (rows) => rows.map(([k, v, raw]) => `<tr><th>${esc(k)}</th><td>${raw ? v : esc(v ?? "—")}</td></tr>`).join("");
+    const card = (label, when, sub) => `<div class="sk-panel date-card"><div class="label">${esc(label)}</div><div class="when">${fmt(when)}</div><div class="mono muted sub">${esc(sub || when || "not dated")}</div></div>`;
+    const human = (id) => String(id).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+
+    let yardCache = null;
 
     function paintState(d) {
       const a = d.lawn_action_items, s = d.schedule, j = d.jev || {}, f = d.feed || {};
       const cap = f.capacity_mm || 25;
+      const trigger = f.trigger_mm ?? 10;
       const deck = f.mower_deck || [1.25, 1.5, 2, 2.5, 3, 3.5, 4];
       const nowCut = f.mower_height_inches || 3;
       const maxCut = f.mower_max_inches || 4;
       const gpm = f.gpm || 4;
-      const mins = f.target_water_minutes || 0;
       const cycleMin = f.cycle_minutes || 50;
-      document.getElementById("place").textContent =
+      const todayMin = f.target_water_minutes || cycleMin;
+      const asOf = d.as_of;
+      const wateredMm = Number(f.watered_today_mm) || 0;
+      const morning = Number(d.current_water_balance_mm) || 0;
+      const bal = f.soil_now_mm ?? morning;
+      document.title = (wateredMm ? "Watered" : a.should_water ? "Water" : a.should_mow ? "Mow" : "Rest") + " today · Grass Optimizer";
+      $("place").textContent =
         (f.address || "Martensville") + " · " + (f.grass || "cool-season mix") +
         " · " + (f.facing || "west") + " yard, " + (f.light || "morning shade");
-      document.getElementById("updated").textContent =
-        (f.ran_at || d.as_of || "") + " · growth " + d.estimated_growth_rate +
-        " · " + cycleMin + " min @ " + gpm + " GPM / " + (f.sqft || 1000) + " sqft";
-      document.getElementById("today-water").textContent = a.should_water
-        ? ("Water today · " + (mins || cycleMin) + " min")
-        : "No water today";
-      document.getElementById("today-water").className = "chip " + (a.should_water ? "go" : "stop");
-      document.getElementById("today-mow").textContent = a.should_mow ? "Mow today" : "No mow today";
-      document.getElementById("today-mow").className = "chip " + (a.should_mow ? "go" : "stop");
-      document.getElementById("shutdown").textContent = a.is_winter_shutdown_triggered ? "Lockdown" : "Growing season";
-      const rec = a.recommended_mower_height_inches;
+      $("updated").textContent = "Updated " + stamp(f.ran_at || d.as_of) + " · growth " + d.estimated_growth_rate;
+      $("today-water").textContent = wateredMm
+        ? "✓ Watered today · " + mins(f.watered_today_minutes) + " logged"
+        : a.should_water
+          ? "Water today · " + mins(todayMin) + " (" + n1(a.target_water_amount_mm) + " mm)"
+          : "No water today";
+      $("today-water").className = "chip " + (a.should_water || wateredMm ? "go" : "stop");
+      $("today-mow").textContent = a.should_mow ? "Mow today" : "No mow today";
+      $("today-mow").className = "chip " + (a.should_mow ? "go" : "stop");
+      const fa = d.fall || {};
+      bladeNow = fa.blade_in ?? null;
+      const hoseAway = fa.cleanup_date && asOf > fa.cleanup_date;
+      $("shutdown").textContent = a.is_winter_shutdown_triggered ? "Grass stopped · all off" : hoseAway ? "Hose away · growing" : "Growing";
+      const frostSoon = (fa.frost_nights || []).filter((x) => x <= addDays(asOf, 2));
+      $("frost").hidden = !frostSoon.length;
+      $("frost").textContent = frostSoon.length
+        ? "Frost " + frostSoon.map((x) => x === asOf ? "today" : short(x)).join(" and ") +
+          ". Do not walk on or mow the grass until the frost melts. A frost does not stop growth."
+        : "";
+      const rec = s.next_mow_height ?? a.recommended_mower_height_inches;
       const wp = d.winter_phase ?? f.winter_phase ?? "—";
       const sp = d.spring_phase ?? f.spring_phase ?? "—";
-      document.getElementById("phase").textContent = "W" + wp + " / S" + sp + " · " + rec + '"';
-      document.getElementById("dates").innerHTML = [
-        card("Water next", s.next_water_date),
-        card("Water again", s.following_water_date),
-        card("Mow next", s.next_mow_date),
-        card("Last soak + last cut", s.last_water_of_season),
+      $("phase").textContent = "Winter step " + wp + " · spring step " + sp + " · deck " + rec + '"';
+      const planned = {
+        [s.next_water_date]: [f.next_water_minutes, s.next_water_mm],
+        [s.following_water_date]: [f.following_water_minutes, s.following_water_mm],
+      };
+      const minPerMm = (f.cycle_minutes || 60) / (f.cycle_mm || 9.78);
+      const waterSub = (iso) => {
+        if (!iso) return "not scheduled";
+        if (iso === asOf) return mins(todayMin) + " today";
+        const [m, mm] = planned[iso] || [];
+        return m ? mins(m) + " · " + n1(mm) + " mm" : mins(cycleMin) + " cycle";
+      };
+      const mowAt = s.next_mow_height ?? f.next_mow_height ?? rec;
+      const soakMm = s.final_soak_mm || ((s.waters || []).find((w) => w[2] === "final soak") || [])[1];
+      $("dates").innerHTML = [
+        card("Water next", s.next_water_date, s.next_water_date && waterSub(s.next_water_date)),
+        card("Mow next", s.next_mow_date, s.next_mow_date && "at " + mowAt + '" · blade ~' + n2(fa.blade_in) + '"'),
+        card("Hose cleanup", fa.cleanup_date, fa.cleanup_date
+          ? (soakMm ? "final soak " + mins(soakMm * minPerMm) + " first · " : "") + (fa.cleanup_basis || "")
+          : "not dated"),
+        card("Grass stops", fa.dormant_date, (fa.dormant_basis || "").split(":")[0] + (fa.soil_now_c != null ? " · soil " + n1(fa.soil_now_c) + "°C now" : "")),
       ].join("");
-      const pct = Math.max(0, Math.min(100, (d.current_water_balance_mm / cap) * 100));
-      document.getElementById("soil-label").textContent = "Soil water · " + cap + " mm profile · trigger " + (f.trigger_mm || 10) + " mm";
-      document.getElementById("bar").style.width = pct + "%";
-      document.getElementById("balance").textContent =
-        d.current_water_balance_mm.toFixed(1) + " mm  ·  " + a.target_water_amount_mm + " mm / " +
-        (mins || 0) + " min if watering";
-      document.getElementById("pack").textContent =
-        "Snowpack (SWE) " + n2(d.snowpack_mm ?? f.snowpack_mm ?? 0) + " mm · melts into soil when highs > 0°C";
-      document.getElementById("deck-label").textContent = "Mower deck — current cut " + nowCut + '" · max ' + maxCut + '"';
-      document.getElementById("deck").innerHTML = deck.map((n) => {
+      const pct = Math.max(0, Math.min(100, (bal / cap) * 100));
+      $("soil-label").textContent = "Soil water · " + cap + " mm profile · water below " + trigger + " mm";
+      $("bar").style.width = pct + "%";
+      $("balance").textContent = n1(bal) + " / " + cap + " mm" +
+        (wateredMm ? " · " + n1(morning) + " this morning + " + n1(wateredMm) + " mm logged today" : "") +
+        (a.should_water ? " · add " + n1(a.target_water_amount_mm) + " mm (" + mins(todayMin) + ")" : "");
+      $("pack").textContent =
+        "Snowpack (SWE) " + n1(d.snowpack_mm ?? f.snowpack_mm ?? 0) + " mm · melts into soil when highs > 0°C";
+      $("deck-label").textContent = "Mower deck — last cut " + nowCut + '" · max ' + maxCut + '"';
+      $("deck").innerHTML = deck.map((n) => {
         const cls = n === nowCut ? "notch now" : (n === rec ? "notch rec" : "notch");
         return `<span class="${cls}">${n}"</span>`;
       }).join("");
-      document.getElementById("deck-note").textContent = "Gold = last cut (" + nowCut + "\"). Evergreen = recommended " + rec + "\". Never mow the same day you water.";
-      document.getElementById("why").innerHTML = kv([
-        ["Yard", f.address || "Martensville, SK"],
-        ["Soil water", d.current_water_balance_mm.toFixed(1) + " mm of " + cap + " mm (trigger " + (f.trigger_mm || 10) + " mm)"],
-        ["Snowpack", n2(d.snowpack_mm ?? f.snowpack_mm) + " mm SWE"],
+      paintPlan(d);
+      $("deck-note").textContent = nowCut === rec
+        ? "Gold = last cut and recommended (" + rec + "\"). Never mow the same day you water."
+        : "Gold = last cut (" + nowCut + "\"). Green = next cut " + rec + "\" (never more than 1/3 of the blade per cut). Never mow the same day you water.";
+      $("why").innerHTML = kv([
+        ["Soil water", n1(bal) + " of " + cap + " mm (water below " + trigger + " mm)"],
+        ["Snowpack", n1(d.snowpack_mm ?? f.snowpack_mm) + " mm SWE"],
         ["Growth", d.estimated_growth_rate],
-        ["Water today", a.should_water ? "yes · " + a.target_water_amount_mm + " mm / " + (mins || cycleMin) + " min" : "no"],
-        ["Mow today", yn(a.should_mow) + " · never on a water day"],
-        ["Next water", fmt(s.next_water_date) + " · " + cycleMin + " min @ " + gpm + " GPM"],
-        ["Water again", fmt(s.following_water_date)],
-        ["Next mow", fmt(s.next_mow_date)],
-        ["Last soak", fmt(s.last_water_of_season)],
-        ["Last winter cut", fmt(s.last_mow_of_season)],
-        ["Frost watch", fmt(s.frost_watch_date)],
-        ["Winter / spring phase", String(wp) + " / " + String(sp)],
-        ["Season", a.is_winter_shutdown_triggered ? "lockdown" : "growing"],
+        ["Water today", wateredMm ? "done · " + n1(wateredMm) + " mm logged" : a.should_water ? "yes · " + n1(a.target_water_amount_mm) + " mm / " + mins(todayMin) : "no"],
+        ["Mow today", yn(a.should_mow) + " · never on a water day; best the day before one"],
+        ["Soil temperature", fa.soil_now_c != null ? n1(fa.soil_now_c) + " °C at 6 cm (" + fa.soil_now_basis + ") · stops below " + (yardCache?.dormant_soil_c ?? 5) + " °C for " + (yardCache?.dormant_days ?? 5) + " days" : "—"],
+        ["Blade height", n2(fa.blade_in) + '" · ' + (fa.blade_basis || "") + (fa.implied_rate_in_day != null ? " · your measure implies " + n2(fa.implied_rate_in_day) + " in/day at 20 °C" : "")],
+        ["Frost nights", (fa.frost_nights || []).map(short).join(", ") || "none in 16 days"],
+        ["Hose freeze", fmt(fa.hose_date) + " · " + (fa.hose_basis || "—") + " · needs " + n1(fa.ice_need_fdh) + " °C·h below 0"],
+        ["Grass stops", fmt(fa.dormant_date) + " · " + (fa.dormant_basis || "—")],
+        ["Next water", fmt(s.next_water_date) + (s.next_water_date ? " · " + waterSub(s.next_water_date) + " @ " + gpm + " GPM" : "")],
+        ["Next mow", fmt(s.next_mow_date) + (s.next_mow_date ? " · at " + mowAt + '"' : "")],
+        ["Final soak", s.last_water_of_season ? fmt(s.last_water_of_season) + (soakMm ? " · " + n1(soakMm) + " mm / " + mins(soakMm * minPerMm) : "") : "—"],
+        ["Last cut of season", s.last_mow_of_season ? fmt(s.last_mow_of_season) : "after the 16-day window"],
+        ["Season", (a.is_winter_shutdown_triggered ? "grass stopped · all off" : "growing") + " · winter " + wp + " / spring " + sp],
+        ["Yard", (f.sqft || 1000) + " sqft · " + cycleMin + " min cycle @ " + gpm + " GPM"],
       ]);
-      document.getElementById("jev").innerHTML = kv([
+      $("jev").innerHTML = kv([
         ["Growth", (j.growth || d.estimated_growth_rate || "—") + " · score " + n2(j.growth_score) + " · conf " + n2(j.growth_confidence)],
-        ["Rain in 48h", n2(j.significant_rain_24_48h) + " (act ≥ 0.65)"],
-        ["Mow now", n2(j.should_mow_now) + " (act ≥ 0.65; blocked if watering)"],
+        ["Rain in 48h", n2(j.significant_rain_24_48h) + " (acts at ≥ 0.65)"],
+        ["Mow now", n2(j.should_mow_now) + " (acts at ≥ 0.65; blocked if watering)"],
         ["Rain covers water", n2(j.rain_covers_watering)],
-        ["Freeze / blowout", n2(j.freeze_blowout_now)],
+        ["Frost in 7 days", n2(j.freeze_blowout_now) + " (warning only)"],
         ["Mower regime", (j.mower_regime || "—") + " · conf " + n2(j.mower_regime_confidence)],
         ["Model", j.model || "—"],
       ]);
       const checklist = d.checklist || [];
-      document.getElementById("checklist").innerHTML = checklist.length
-        ? kv(checklist.map((c) => [c.id, (c.status || "—") + " — " + (c.reason || "")]))
+      $("checklist").innerHTML = checklist.length
+        ? kv(checklist.map((c) => [human(c.id),
+            `<span class="pill${c.status === "wait" ? "" : " ready"}">${esc(c.status || "—")}</span><span class="reason">${esc(c.reason || "")}</span>`, true]))
         : kv([["Status", "no checklist on this snapshot"]]);
       const p = d.previous_run;
-      document.getElementById("prev").innerHTML = p ? kv([
-        ["Ran (CST)", p.ran_at || "—"],
-        ["As of", p.as_of || "—"],
-        ["Soil water", (p.balance_mm ?? "—") + " mm"],
-        ["Growth", p.growth || "—"],
-        ["Water", p.should_water ? "yes · " + (p.target_mm ?? "—") + " mm / " + (p.target_minutes ?? p.cycle_minutes ?? "—") + " min" : "no"],
+      $("prev").innerHTML = p ? kv([
+        ["Ran", stamp(p.ran_at)],
+        ["Soil water", n1(p.balance_mm) + " mm · growth " + (p.growth || "—")],
+        ["Water", p.watered_today_mm ? "done · " + n1(p.watered_today_mm) + " mm logged" : p.should_water ? "yes · " + n1(p.target_mm) + " mm / " + mins(p.target_minutes ?? p.cycle_minutes) : "no"],
         ["Mow", yn(p.should_mow)],
-        ["Next water", fmt(p.next_water)],
-        ["Water again", fmt(p.following_water)],
-        ["Next mow", fmt(p.next_mow)],
-        ["Deck rec", (p.height ?? "—") + '"'],
-        ["Lockdown", yn(p.shutdown)],
+        ["Next water / again", fmt(p.next_water) + " / " + fmt(p.following_water)],
+        ["Next mow", fmt(p.next_mow) + " at " + (p.height ?? "—") + '"'],
+        ["All off", yn(p.shutdown)],
         ["Jev growth / rain / freeze", n2(p.jev_growth) + " / " + n2(p.jev_rain48) + " / " + n2(p.jev_freeze)],
       ]) : kv([["Status", "no earlier run yet"]]);
     }
 
+    const addDays = (iso, n) => { const t = new Date(iso + "T12:00:00"); t.setDate(t.getDate() + n); return t.toISOString().slice(0, 10); };
+
+    function paintPlan(d) {
+      const fa = d.fall || {}, s = d.schedule || {}, f = d.feed || {};
+      const minPerMm = (f.cycle_minutes || 60) / (f.cycle_mm || 9.78);
+      const grow = Object.fromEntries(fa.grow_week_in || []);
+      const mows = Object.fromEntries((s.mows || []).map((m) => [m[0], m]));
+      const waters = Object.fromEntries((s.waters || []).map((w) => [w[0], w]));
+      const frost = new Set(fa.frost_nights || []);
+      const rows = (fa.soil_week_c || []).map(([day, c, basis]) => {
+        const plan = [];
+        const w = waters[day], m = mows[day];
+        if (w) plan.push(w[2] === "logged" ? "watered " + n1(w[1]) + " mm" : (w[2] === "final soak" ? "FINAL SOAK " : "water ") + mins(w[1] * minPerMm) + " (" + n1(w[1]) + " mm)");
+        if (day === fa.cleanup_date) plan.push("HOSE CLEANUP (after any soak)");
+        if (m) plan.push("mow at " + m[1] + '" (blade ~' + n2(m[2]) + '")');
+        if (frost.has(day)) plan.push(w && w[2] !== "logged" ? "frost: start the water after it melts" : "frost: no mow or walking until it melts");
+        if (day === fa.dormant_date) plan.push("GRASS STOPS · all off");
+        else if (fa.dormant_date && day > fa.dormant_date) plan.push("off");
+        const cls = day === d.as_of ? ' class="today"' : "";
+        return `<tr${cls}><td>${short(day)}</td><td class="num">${n1(c)}<span class="muted"> ${esc(basis[0] || "")}</span></td><td class="num">${(grow[day] ?? 0).toFixed(3)}</td><td class="wrap">${esc(plan.join(" · ") || "—")}</td></tr>`;
+      });
+      $("plan").querySelector("tbody").innerHTML = rows.join("") || `<tr><td colspan="4">no soil data on this snapshot</td></tr>`;
+    }
+
+    // ---- Run ledger ----
+    const LEDGER_SHOW = 12;
+    let ledgerRows = [], ledgerAll = false;
     function paintLedger(rows) {
-      const tb = document.querySelector("#ledger tbody");
-      tb.innerHTML = (rows || []).map((r) => `<tr>
-        <td class="mono">${r.ran_at || "—"}</td>
-        <td>${r.as_of || "—"}</td>
-        <td>${r.balance_mm ?? "—"}</td>
-        <td>${r.growth || "—"}</td>
-        <td>${yn(r.should_water)}</td>
-        <td>${yn(r.should_mow)}</td>
-        <td>${r.target_minutes ?? r.cycle_minutes ?? "—"}</td>
-        <td>${r.next_water || "—"}</td>
-        <td>${r.next_mow || "—"}</td>
+      if (rows) ledgerRows = rows;
+      const shown = ledgerAll ? ledgerRows : ledgerRows.slice(0, LEDGER_SHOW);
+      $("ledger").querySelector("tbody").innerHTML = shown.map((r) => `<tr>
+        <td class="mono">${esc(stamp(r.ran_at))}</td>
+        <td>${short(r.as_of)}</td>
+        <td class="num">${n1(r.balance_mm)}</td>
+        <td>${esc(r.growth || "—")}</td>
+        <td class="${r.should_water || r.watered_today_mm ? "yes" : ""}">${r.watered_today_mm ? "done" : yn(r.should_water)}</td>
+        <td class="${r.should_mow ? "yes" : ""}">${yn(r.should_mow)}</td>
+        <td class="num">${r.should_water ? Math.round(r.target_minutes ?? r.cycle_minutes ?? 0) : "—"}</td>
+        <td>${short(r.next_water)}</td>
+        <td>${short(r.next_mow)}</td>
       </tr>`).join("") || `<tr><td colspan="9">no runs yet</td></tr>`;
+      const more = $("ledger-more");
+      more.hidden = ledgerRows.length <= LEDGER_SHOW;
+      more.textContent = ledgerAll ? "Show newest " + LEDGER_SHOW : "Show all " + ledgerRows.length + " runs";
+    }
+    $("ledger-more").addEventListener("click", () => { ledgerAll = !ledgerAll; paintLedger(); });
+
+    // ---- Lawn log editor ----
+    const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Regina" });
+
+    function actionsFromYard(y) {
+      const rows = Object.entries(y.scheduled_water_minutes || {}).map(([d, m]) => ({ date: d, action: "water", amount: Number(m) }));
+      for (const [d, h] of Object.entries(y.mow_log || {})) rows.push({ date: d, action: "mow", amount: Number(h) });
+      for (const [d, h] of Object.entries(y.height_log || {})) rows.push({ date: d, action: "measure", amount: Number(h) });
+      rows.sort((a, b) => (a.date + a.action).localeCompare(b.date + b.action));
+      return rows;
     }
 
-    function fillForm(y) {
-      const f = document.getElementById("yard-form");
-      f.cycle_minutes.value = y.cycle_minutes;
-      f.gpm.value = y.gpm;
-      f.sqft.value = y.sqft;
-      f.last_mow_date.value = y.last_mow_date;
-      f.capacity_mm.value = y.capacity_mm;
-      f.trigger_mm.value = y.trigger_mm;
-      f.kc.value = y.kc;
-      f.et_factor.value = y.et_factor;
-      f.mower_height_inches.value = y.mower_height_inches;
-      const iv = y.mow_interval_days || {};
-      f.intervals.value = [iv.low, iv.medium, iv.high].filter((n) => n != null).join(" ") || "10 7 5";
-      f.scheduled.value = Object.entries(y.scheduled_water_minutes || {}).map(([d, m]) => d + " " + m).join("\n");
+    const amountMeta = (action) => action === "mow"
+      ? { step: "0.25", min: "0.5", max: "6", placeholder: "height", unit: "in", label: "Cut height in inches" }
+      : action === "measure"
+        ? { step: "0.05", min: "0.5", max: "12", placeholder: "blade", unit: "in", label: "Measured blade height in inches" }
+        : { step: "1", min: "1", max: "600", placeholder: "minutes", unit: "min", label: "Water minutes" };
+
+    let bladeNow = null;
+    const defaultAmount = (action) => action === "mow"
+      ? (yardCache?.mower_height_inches ?? 3)
+      : action === "measure"
+        ? (bladeNow != null ? Math.round(bladeNow * 20) / 20 : 3.5)
+        : (yardCache?.cycle_minutes ?? 60);
+
+    function logRow(r) {
+      const m = amountMeta(r.action);
+      return `<tr>
+        <td class="c-date"><input type="date" class="log-date" aria-label="Date" value="${esc(r.date || "")}" max="${today()}" required /></td>
+        <td class="c-action"><select class="log-action" aria-label="Action">
+          <option value="water"${r.action === "water" ? " selected" : ""}>Water</option>
+          <option value="mow"${r.action === "mow" ? " selected" : ""}>Mow</option>
+          <option value="measure"${r.action === "measure" ? " selected" : ""}>Measure</option>
+        </select></td>
+        <td class="c-amount"><div class="amount">
+          <input type="number" class="log-amount" inputmode="decimal" aria-label="${m.label}" step="${m.step}" min="${m.min}" max="${m.max}"
+            value="${esc(r.amount ?? "")}" placeholder="${m.placeholder}" required />
+          <span class="muted unit">${m.unit}</span>
+        </div></td>
+        <td class="del"><button type="button" class="chip icon log-del" aria-label="Delete row" title="Delete row">✕</button></td>
+      </tr>`;
     }
 
-    function formPayload() {
-      const f = document.getElementById("yard-form");
-      const parts = f.intervals.value.trim().split(/\s+/).map(Number);
-      const scheduled = {};
-      for (const line of f.scheduled.value.split("\n")) {
-        const bits = line.trim().split(/\s+/);
-        if (bits.length >= 2 && bits[0]) scheduled[bits[0]] = Number(bits[1]);
+    const logBody = () => $("action-log").querySelector("tbody");
+    let logDirty = false;
+    function paintLog(rows) {
+      logBody().innerHTML = rows.length ? rows.map(logRow).join("")
+        : `<tr><td colspan="4" class="muted" style="padding:0.75rem 0">No entries yet. Add a row for each water or cut.</td></tr>`;
+      logDirty = false;
+      checkLog();
+    }
+
+    function readLog() {
+      return [...logBody().querySelectorAll("tr")].filter((tr) => tr.querySelector(".log-date")).map((tr) => ({
+        tr,
+        date: tr.querySelector(".log-date").value,
+        action: tr.querySelector(".log-action").value,
+        amountRaw: tr.querySelector(".log-amount").value,
+      }));
+    }
+
+    // Flags duplicates and water+mow on one day. Returns an error string or "".
+    function checkLog() {
+      const rows = readLog();
+      const seen = {}, byDay = {};
+      const warns = [];
+      let err = "";
+      for (const r of rows) {
+        r.tr.classList.remove("dup");
+        const amt = r.tr.querySelector(".log-amount");
+        const bad = r.amountRaw !== "" && !amt.checkValidity();
+        amt.classList.toggle("bad", bad);
+        if (bad && !err) err = "amount out of range on " + (r.date || "a row");
+        if (!r.date) continue;
+        const key = r.date + r.action;
+        if (seen[key]) { r.tr.classList.add("dup"); seen[key].classList.add("dup"); if (!err) err = "two " + r.action + " rows on " + r.date + " (keep one)"; }
+        seen[key] = r.tr;
+        if (r.action !== "measure") (byDay[r.date] ||= new Set()).add(r.action);
       }
+      for (const [day, acts] of Object.entries(byDay)) if (acts.size > 1) warns.push(fmt(day));
+      $("log-warn").textContent = warns.length ? "Watered and mowed the same day: " + warns.join(", ") + "." : "";
+      return err;
+    }
+
+    function logPayload() {
+      const rows = readLog();
+      for (const r of rows) {
+        if (!r.date && r.amountRaw === "") continue; // untouched blank row
+        if (!r.date) return { error: "a row is missing its date" };
+        if (r.amountRaw === "") return { error: "missing amount on " + r.date };
+      }
+      const err = checkLog();
+      if (err) return { error: err };
+      return { actions: rows.filter((r) => r.date).map((r) => ({ date: r.date, action: r.action, amount: Number(r.amountRaw) })) };
+    }
+
+    logBody().addEventListener("change", (e) => {
+      logDirty = true;
+      if (e.target.classList.contains("log-action")) {
+        const tr = e.target.closest("tr");
+        const m = amountMeta(e.target.value);
+        const input = tr.querySelector(".log-amount");
+        Object.assign(input, { step: m.step, min: m.min, max: m.max, placeholder: m.placeholder });
+        input.setAttribute("aria-label", m.label);
+        input.value = defaultAmount(e.target.value);
+        tr.querySelector(".unit").textContent = m.unit;
+      }
+      checkLog();
+    });
+    logBody().addEventListener("input", () => { logDirty = true; });
+
+    logBody().addEventListener("click", (e) => {
+      const btn = e.target.closest(".log-del");
+      if (!btn) return;
+      btn.closest("tr").remove();
+      logDirty = true;
+      if (!readLog().length) paintLog([]), logDirty = true;
+      checkLog();
+    });
+
+    $("add-action").addEventListener("click", () => {
+      if (!readLog().length) logBody().innerHTML = "";
+      logBody().insertAdjacentHTML("beforeend", logRow({ date: today(), action: "water", amount: defaultAmount("water") }));
+      logDirty = true;
+      checkLog();
+      logBody().lastElementChild.querySelector(".log-date").focus();
+    });
+
+    // ---- Settings ----
+    const SETTINGS = ["cycle_minutes", "gpm", "sqft", "capacity_mm", "trigger_mm", "kc", "et_factor",
+      "growth_rate_in_day", "hose_ice_in", "hose_margin_c", "hose_risk_pct", "dormant_soil_c", "dormant_days"];
+    function fillSettings(y) {
+      const f = $("yard-form");
+      for (const k of SETTINGS) f[k].value = y[k] ?? "";
+      const iv = y.mow_interval_days || {};
+      f.iv_low.value = iv.low ?? 10;
+      f.iv_medium.value = iv.medium ?? 7;
+      f.iv_high.value = iv.high ?? 5;
+    }
+
+    function settingsPayload() {
+      const f = $("yard-form");
+      const num = (k) => Number(f[k].value);
       return {
-        cycle_minutes: Number(f.cycle_minutes.value),
-        gpm: Number(f.gpm.value),
-        sqft: Number(f.sqft.value),
-        last_mow_date: f.last_mow_date.value,
-        capacity_mm: Number(f.capacity_mm.value),
-        trigger_mm: Number(f.trigger_mm.value),
-        kc: Number(f.kc.value),
-        et_factor: Number(f.et_factor.value),
-        mower_height_inches: Number(f.mower_height_inches.value),
-        mow_interval_days: { low: parts[0] || 10, medium: parts[1] || 7, high: parts[2] || 5 },
-        scheduled_water_minutes: scheduled,
+        cycle_minutes: num("cycle_minutes"), gpm: num("gpm"), sqft: num("sqft"),
+        capacity_mm: num("capacity_mm"), trigger_mm: num("trigger_mm"), kc: num("kc"), et_factor: num("et_factor"),
+        growth_rate_in_day: num("growth_rate_in_day"), hose_ice_in: num("hose_ice_in"), hose_margin_c: num("hose_margin_c"),
+        hose_risk_pct: num("hose_risk_pct"), dormant_soil_c: num("dormant_soil_c"), dormant_days: num("dormant_days"),
+        mow_interval_days: { low: num("iv_low"), medium: num("iv_medium"), high: num("iv_high") },
       };
     }
 
-    const status = (msg) => { document.getElementById("form-status").textContent = msg; };
+    // ---- Network ----
+    const setStatus = (id, msg, kind) => { const el = $(id); el.textContent = msg; el.className = "mono muted status" + (kind ? " " + kind : ""); };
+    const busyBtns = ["add-action", "save-log", "save-btn"];
+    const busy = (on) => busyBtns.forEach((id) => { $(id).disabled = on; });
 
-    document.getElementById("yard-form").addEventListener("submit", async (e) => {
+    async function api(path, body) {
+      const opts = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+      let r;
+      try { r = await fetch(path, opts); } catch { throw new Error("server unreachable"); }
+      const data = await r.json().catch(() => null);
+      if (!r.ok) throw new Error((data && data.error) || "HTTP " + r.status);
+      return data;
+    }
+
+    async function saveLog() {
+      const p = logPayload();
+      if (p.error) throw new Error(p.error);
+      const res = await api("/api/yard", p);
+      yardCache = res.yard;
+      paintLog(actionsFromYard(res.yard));
+      await repaint(res.state);
+    }
+
+    async function repaint(state) {
+      paintState(state);
+      paintLedger(await api("/api/ledger").catch(() => ledgerRows));
+    }
+
+    $("save-log").addEventListener("click", async () => {
+      busy(true); setStatus("form-status", "saving + updating soil…");
+      try { await saveLog(); setStatus("form-status", "saved · numbers above updated", "ok"); }
+      catch (e) { setStatus("form-status", "not saved: " + e.message, "err"); }
+      finally { busy(false); }
+    });
+
+    $("yard-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      status("saving…");
-      const r = await fetch("/api/yard", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formPayload()) });
-      status(r.ok ? "saved" : "save failed");
-      if (r.ok) fillForm(await r.json());
+      const f = e.target;
+      if (!f.checkValidity()) {
+        f.reportValidity();
+        setStatus("settings-status", "fix the highlighted field", "err");
+        return;
+      }
+      busy(true); setStatus("settings-status", "saving…");
+      try {
+        const res = await api("/api/yard", settingsPayload());
+        yardCache = res.yard;
+        fillSettings(res.yard); // leaves any unsaved log edits alone
+        await repaint(res.state);
+        setStatus("settings-status", "saved · numbers above updated", "ok");
+      } catch (err) { setStatus("settings-status", "not saved: " + err.message, "err"); }
+      finally { busy(false); }
     });
 
-    document.getElementById("run-btn").addEventListener("click", async () => {
-      status("saving…");
-      const saved = await fetch("/api/yard", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formPayload()) });
-      if (!saved.ok) { status("save failed"); return; }
-      status("running (weather + Jev)…");
-      const r = await fetch("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-      if (!r.ok) { status("run failed"); return; }
-      const d = await r.json();
-      paintState(d);
-      const led = await fetch("/api/ledger").then((x) => x.json()).catch(() => []);
-      paintLedger(led);
-      fillForm(await fetch("/api/yard").then((x) => x.json()));
-      status("ran " + (d.feed && d.feed.ran_at || ""));
-    });
+    window.addEventListener("beforeunload", (e) => { if (logDirty) e.preventDefault(); });
 
     Promise.all([
-      fetch("lawn_state.json").then((r) => r.json()),
-      fetch("ledger.json").then((r) => r.ok ? r.json() : []).catch(() => []),
-      fetch("/api/yard").then((r) => r.ok ? r.json() : null).catch(() => null),
+      fetch("lawn_state.json", { cache: "no-store" }).then((r) => r.json()),
+      fetch("ledger.json", { cache: "no-store" }).then((r) => r.ok ? r.json() : []).catch(() => []),
+      api("/api/yard").catch(() => null),
     ]).then(([d, rows, yard]) => {
       paintState(d);
       paintLedger(rows);
-      fillForm(yard || {
-        ...d.feed,
-        scheduled_water_minutes: {},
-        mow_interval_days: { low: 10, medium: 7, high: 5 },
-      });
-    }).catch(() => { document.getElementById("updated").textContent = "snapshot missing"; });
+      yardCache = yard;
+      const y = yard || { ...d.feed, mow_interval_days: { low: 10, medium: 7, high: 5 } };
+      fillSettings(y);
+      if (yard) paintLog(actionsFromYard(yard));
+      else {
+        paintLog([]);
+        busy(true);
+        setStatus("form-status", "settings API offline · read only", "err");
+      }
+    }).catch(() => { $("updated").textContent = "snapshot missing"; });
   </script>
 </body>
 </html>

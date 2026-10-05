@@ -3,16 +3,18 @@ from __future__ import annotations
 import json
 import os
 import shutil
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from lawn.checklist import evaluate_checklist
 from lawn.jev import ask_jev
-from lawn.models import DailyReport, LawnActionItems, ScheduleOut, Yard
+from lawn.models import DailyReport, Day, LawnActionItems, ScheduleOut, Yard
 from lawn.rules import (
+    cut_height,
     cycle_mm,
     days_since_mow,
+    et_mm,
     growth_from_highs,
     in_spring_season,
     manuals_mm,
@@ -21,12 +23,17 @@ from lawn.rules import (
     season_end,
     season_height,
     spring_status,
+    step_balance,
 )
-from lawn.weather import fetch_horizon, fetch_weather
+from lawn.season import fall_plan
+from lawn.weather import fetch_climate, fetch_open_meteo, fetch_weather
 
 ROOT = Path(__file__).resolve().parent.parent
 PUBLISH = Path("/var/www/grass")
 LEDGER = ROOT / "ledger.json"
+WEATHER_CACHE = ROOT / "weather_cache.json"
+CLIMATE_CACHE = ROOT / "climate_cache.json"
+CLIMATE_YEARS = 15
 CST = ZoneInfo("America/Regina")
 YES = 0.65
 
@@ -47,12 +54,25 @@ def load_yard() -> Yard:
     path = ROOT / "yard.json"
     if not path.exists():
         return Yard()
-    return Yard.model_validate_json(path.read_text())
+    raw = json.loads(path.read_text())
+    yard = Yard.model_validate(raw)
+    # One-time migrate: old yards only had last_mow_date.
+    if "mow_log" not in raw and yard.last_mow_date:
+        yard = yard.model_copy(
+            update={"mow_log": {yard.last_mow_date: float(yard.mower_height_inches)}}
+        )
+        path.write_text(yard.model_dump_json(indent=2))
+    return yard
 
 
 def save_yard(data: dict) -> Yard:
+    from lawn.actions import yard_patch_from_actions
+
+    payload = {k: v for k, v in data.items() if v is not None}
+    if "actions" in payload:
+        payload.update(yard_patch_from_actions(payload.pop("actions") or []))
     current = load_yard().model_dump()
-    current.update({k: v for k, v in data.items() if v is not None})
+    current.update(payload)
     yard = Yard.model_validate(current)
     (ROOT / "yard.json").write_text(yard.model_dump_json(indent=2))
     return yard
@@ -73,7 +93,7 @@ def load_saved() -> tuple[str | None, float | None, float]:
 
 def formula_signals(forecast, growth: str, yard: Yard) -> dict:
     rain48 = sum(d.rain for d in forecast[:3])
-    freeze = 1.0 if any(d.tmin <= 0 for d in forecast[:7]) else 0.0
+    freeze = 1.0 if any(d.tmin <= yard.frost_c for d in forecast[:7]) else 0.0  # frost warning only
     score = {"low": 0.3, "medium": 1.0, "high": 1.7}[growth]
     return {
         "growth": growth,
@@ -127,21 +147,27 @@ def reason(
     jev: dict,
     y: Yard,
     spring: int,
+    fall: dict | None = None,
 ) -> str:
     place = f"{loc.get('name')}, {loc.get('region')}"
-    last_water = sched.last_water_of_season or "not yet dated"
-    last_mow = sched.last_mow_of_season or "not yet dated"
-    follow = sched.following_water_date or "unscheduled"
-    watch = sched.frost_watch_date or "none in window"
+    f = fall or {}
+    next_mm = sched.next_water_mm or cycle_mm(y)
+    water = (
+        f"Next water {sched.next_water_date} ({next_mm:.1f} mm / {minutes_for(next_mm, y):g} min)"
+        if sched.next_water_date else "No water in the forecast window"
+    )
+    mow = (
+        f"Next mow {sched.next_mow_date} at {sched.next_mow_height:g} in"
+        if sched.next_mow_date and sched.next_mow_height else "No mow in the forecast window"
+    )
+    soil_c = f.get("soil_now_c")
     return (
-        f"{place}. Soil {balance:.1f} mm + snowpack {pack:.1f} mm "
-        f"(profile {y.capacity_mm:g} mm). Growth {growth}. "
-        f"Next water {sched.next_water_date} "
-        f"({cycle_mm(y)} mm / {y.cycle_minutes:g} min @ {y.gpm:g} GPM); "
-        f"water again {follow}. Last deep soak {last_water}. "
-        f"Next mow {sched.next_mow_date}; last winter cut {last_mow}. "
-        f"Frost watch {watch}. Winter {sched.winter} / spring {spring}. "
-        f"Rain-in-48h {jev['significant_rain_24_48h']:.2f}, freeze {jev['freeze_blowout_now']:.2f}."
+        f"{place}. Soil water {balance:.1f} of {y.capacity_mm:g} mm"
+        + (f", soil {soil_c:.1f} °C" if soil_c is not None else "")
+        + f". Growth {growth}; blade about {f.get('blade_in', 0):.2f} in. {water}. {mow}. "
+        f"Hose cleanup {f.get('cleanup_date') or 'not dated'} ({f.get('cleanup_basis') or '—'}). "
+        f"Grass stops {f.get('dormant_date') or 'not dated'}. "
+        f"Frost nights: {', '.join(f.get('frost_nights') or []) or 'none'}. Winter {sched.winter} / spring {spring}."
     )
 
 
@@ -156,18 +182,29 @@ def merge(
     pack: float = 0.0,
     spring: int = 0,
     checklist: list[dict] | None = None,
+    watered_today_mm: float = 0.0,
+    recent_water_mm: float = 0.0,
+    fall: dict | None = None,
 ) -> DailyReport:
     y = yard or Yard()
-    shutdown = sched.winter >= 3 or jev["freeze_blowout_now"] >= YES
-    skip_water = jev["rain_covers_watering"] >= YES and not shutdown
-    should_water = (sched.should_water or shutdown) and not skip_water
-    should_mow = (sched.should_mow or jev["should_mow_now"] >= YES) and not should_water
+    # All off only when the soil says growth has stopped. A frost night is a warning, not a stop.
+    shutdown = sched.winter >= 3
+    final_soak = getattr(sched, "final_soak_today", False)
+    skip_water = jev["rain_covers_watering"] >= YES and not final_soak
+    watered = watered_today_mm > 0
+    plan_water, plan_mm = sched.should_water, sched.target_water_mm
+    should_water = plan_water and not skip_water and not watered and not shutdown
+    should_mow = (sched.should_mow or jev["should_mow_now"] >= YES) and not should_water and not watered and not shutdown
     spring_active = in_spring_season(as_of)
     if spring_active and spring == 0 and sched.winter <= 1 and not shutdown:
         should_mow = False  # dormant/thaw: don't cut
-    target = y.winter_soak_mm if shutdown else (sched.target_water_mm if should_water else 0.0)
+    target = plan_mm if should_water else 0.0
     spring_for_height = spring if spring_active else (2 if sched.winter == 0 else 0)
-    height = season_height(sched.winter, spring_for_height, y)
+    if spring_active:
+        height = cut_height(y.mower_height_inches, season_height(sched.winter, spring_for_height, y), y.mower_deck)
+    else:
+        # The projection already applied the fall ladder, the 1/3 rule and one notch per cut.
+        height = sched.mower_height
     when = as_of or ""
     return DailyReport(
         current_water_balance_mm=round(balance, 2),
@@ -180,15 +217,22 @@ def merge(
             recommended_mower_height_inches=height,
             is_winter_shutdown_triggered=shutdown,
         ),
-        reasoning_summary=reason(balance, pack, jev["growth"], sched, loc, jev, y, spring),
+        reasoning_summary=reason(balance, pack, jev["growth"], sched, loc, jev, y, spring, fall),
         schedule=ScheduleOut(
             next_water_date=sched.next_water_date,
             following_water_date=sched.following_water_date,
+            next_water_mm=round(getattr(sched, "next_water_mm", 0.0), 2),
+            following_water_mm=round(getattr(sched, "following_water_mm", 0.0), 2),
             next_mow_date=sched.next_mow_date,
+            next_mow_height=getattr(sched, "next_mow_height", None),
             last_water_of_season=sched.last_water_of_season,
             last_mow_of_season=sched.last_mow_of_season,
             frost_watch_date=sched.frost_watch_date,
+            final_soak_mm=round(sched.target_water_mm, 2) if final_soak else 0.0,
+            mows=list(getattr(sched, "mows", [])),
+            waters=list(getattr(sched, "waters", [])),
         ),
+        fall=dict(fall or {}),
         winter_phase=sched.winter,
         spring_phase=spring,
         checklist=list(checklist or []),
@@ -205,6 +249,8 @@ def now_cst() -> str:
 def record_ledger(entry: dict, path: Path | None = None) -> list[dict]:
     dest = path or LEDGER
     rows = json.loads(dest.read_text()) if dest.exists() else []
+    if entry.get("as_of"):
+        rows = [r for r in rows if r.get("as_of") != entry["as_of"]]
     rows.insert(0, entry)
     dest.write_text(json.dumps(rows, indent=2))
     return rows
@@ -219,6 +265,8 @@ def ledger_entry(report: DailyReport, ran_at: str) -> dict:
         "ran_at": ran_at,
         "as_of": report.as_of,
         "balance_mm": report.current_water_balance_mm,
+        "pack_mm": report.snowpack_mm,
+        "watered_today_mm": f.get("watered_today_mm", 0.0),
         "growth": report.estimated_growth_rate,
         "should_water": a.should_water,
         "should_mow": a.should_mow,
@@ -231,6 +279,10 @@ def ledger_entry(report: DailyReport, ran_at: str) -> dict:
         "next_mow": s.next_mow_date,
         "height": a.recommended_mower_height_inches,
         "shutdown": a.is_winter_shutdown_triggered,
+        "cleanup": (report.fall or {}).get("cleanup_date"),
+        "dormant": (report.fall or {}).get("dormant_date"),
+        "soil_c": (report.fall or {}).get("soil_now_c"),
+        "blade_in": (report.fall or {}).get("blade_in"),
         "jev_growth": j.get("growth_score"),
         "jev_rain48": j.get("significant_rain_24_48h"),
         "jev_freeze": j.get("freeze_blowout_now"),
@@ -251,26 +303,86 @@ def publish() -> None:
         shutil.copy2(css, assets / css.name)
 
 
-def run() -> DailyReport:
+def today_cst() -> str:
+    return datetime.now(CST).date().isoformat()
+
+
+def load_weather(key: str, yard: Yard, refresh: bool = False) -> tuple[dict, list[Day], list[Day], dict | None]:
+    """Fetch weather once per CST day; later runs that day reuse the cache.
+
+    Returns OpenWeather (location, history, forecast) and Open-Meteo hourly air/soil (or None).
+    """
+    c = json.loads(WEATHER_CACHE.read_text()) if WEATHER_CACHE.exists() else {}
+    fresh = not refresh and c.get("day") == today_cst()
+    if fresh:
+        days = lambda k: [Day.model_validate(d) for d in c[k]]
+        loc, history, forecast = c["loc"], days("history"), days("forecast")
+    else:
+        loc, history, forecast = fetch_weather(key, yard)
+    om = c.get("open_meteo") if fresh else None
+    if om is None:
+        try:
+            om = fetch_open_meteo(yard)
+        except Exception as e:  # soil/hourly data is an add-on: fall back to daily min/max
+            print(f"open-meteo: {type(e).__name__}: {e}")
+            om = None
+    WEATHER_CACHE.write_text(json.dumps({
+        "day": today_cst(),
+        "loc": loc,
+        "history": [d.model_dump() for d in history],
+        "forecast": [d.model_dump() for d in forecast],
+        "open_meteo": om,
+    }))
+    return loc, history, forecast, om
+
+
+def load_climate(yard: Yard) -> dict | None:
+    """Past falls for this yard. Fetched once, again only when a new year is complete or the yard moves."""
+    last = datetime.now(CST).year - 1
+    if CLIMATE_CACHE.exists():
+        c = json.loads(CLIMATE_CACHE.read_text())
+        if c.get("last") == last and c.get("lat") == yard.lat and c.get("lon") == yard.lon:
+            return c
+    try:
+        c = fetch_climate(yard, last - CLIMATE_YEARS + 1, last)
+    except Exception as e:
+        print(f"climate: {type(e).__name__}: {e}")
+        return json.loads(CLIMATE_CACHE.read_text()) if CLIMATE_CACHE.exists() else None
+    CLIMATE_CACHE.write_text(json.dumps(c))
+    return c
+
+
+def replay_start(history: list[Day], yard: Yard) -> tuple[float, float, str | None]:
+    """Soil/pack at the start of the oldest ledger day still inside the weather history.
+
+    Replaying the whole history window each run means water logged late (after the
+    day was already counted) still lands, and re-runs never count a day twice.
+    """
+    rows = json.loads(LEDGER.read_text()) if LEDGER.exists() else []
+    first = history[0].date if history else None
+    inside = [r for r in rows if first and r.get("as_of") and r.get("balance_mm") is not None and r["as_of"] >= first]
+    if inside:
+        r = min(inside, key=lambda r: r["as_of"])
+        return float(r["balance_mm"]), float(r.get("pack_mm") or 0.0), r["as_of"]
+    saved_as_of, saved_bal, saved_pack = load_saved()
+    if saved_as_of is not None and saved_bal is not None:
+        return saved_bal, saved_pack, saved_as_of
+    return yard.prior_balance_mm, yard.prior_snowpack_mm, None
+
+
+def run(refresh: bool = False) -> DailyReport:
     load_env()
     yard = load_yard()
     key = os.environ.get("OPENWEATHER_API_KEY") or os.environ["WEATHERAPI_KEY"]
-    loc, history, forecast = fetch_weather(key, yard)
+    loc, history, forecast, om = load_weather(key, yard, refresh)
     today = date.fromisoformat(forecast[0].date)
+    iso = today.isoformat()
     manuals = manuals_mm(yard)
-    saved_as_of, saved_bal, saved_pack = load_saved()
-    if saved_as_of is not None and saved_bal is not None:
-        balance, pack = replay_moisture(
-            history, start_soil=saved_bal, start_pack=saved_pack, manuals=manuals, yard=yard, since=saved_as_of
-        )
-    else:
-        balance, pack = replay_moisture(
-            history,
-            start_soil=yard.prior_balance_mm,
-            start_pack=yard.prior_snowpack_mm,
-            manuals=manuals,
-            yard=yard,
-        )
+    start_soil, start_pack, since = replay_start(history, yard)
+    balance, pack = replay_moisture(
+        history, start_soil=start_soil, start_pack=start_pack, manuals=manuals, yard=yard, since=since
+    )
+    watered_today = manuals.get(iso, 0.0)
     since_mow = days_since_mow(today, yard.last_mow_date)
     highs = [d.tmax for d in forecast[:7]]
     lows = [d.tmin for d in forecast[:7]]
@@ -280,16 +392,42 @@ def run() -> DailyReport:
         growth = jev["growth"]
     else:
         jev = formula_signals(forecast, growth, yard)
-    sched = project_schedule(forecast, balance, since_mow, growth, manuals, yard)
+
+    # Soil temperature, blade height, frost nights, grass-stop and hose cleanup dates.
+    fall = fall_plan(yard, iso, history, forecast, om, load_climate(yard))
+    plan = {
+        "height": yard.mower_height_inches,
+        "blade": fall.blade_in,
+        "grow": fall.grow_in,
+        "cleanup": fall.cleanup_date,
+        "dormant": fall.dormant_date,
+    }
+    # Plan over 16 days: OpenWeather days, then Open-Meteo days to the end of its forecast.
+    days = forecast + fall.extra_days
+    sched = project_schedule(days, balance, since_mow, growth, manuals, yard, **plan)
+    if watered_today and len(days) > 1:
+        # Today's water is done: every date comes from tomorrow on, starting from the watered soil.
+        d0 = forecast[0]
+        after = step_balance(balance, d0.rain, watered_today, et_mm(d0.tmax, d0.tmin, d0.date, yard), yard.capacity_mm)
+        plan["blade"] = fall.blade_in + fall.grow_in.get(iso, 0.0)
+        ahead = project_schedule(days[1:], after, since_mow + 1, growth, manuals, yard, **plan)
+        for k in (
+            "next_water_date", "next_water_mm", "following_water_date", "following_water_mm",
+            "next_mow_date", "next_mow_height", "last_mow_of_season", "mows",
+        ):
+            setattr(sched, k, getattr(ahead, k))
+        sched.waters = [[iso, round(watered_today, 2), "logged"]] + ahead.waters
+        if fall.cleanup_date == iso:
+            sched.last_water_of_season = iso
+        elif ahead.last_water_of_season:
+            sched.last_water_of_season = ahead.last_water_of_season
     spring = spring_status(highs, lows, pack, yard)
     spring_active = in_spring_season(forecast[0].date)
     spring_out = spring if spring_active else 0
-    if not sched.last_water_of_season:
-        last_mow, last_water = season_end(forecast + fetch_horizon(key, yard, today))
-        sched.last_mow_of_season = sched.last_mow_of_season or last_mow
-        sched.last_water_of_season = last_water
-    sched.frost_watch_date = next((d.date for d in forecast if d.tmin <= 1), None)
-    probe = merge(sched, jev, balance, loc, yard, forecast[0].date, pack=pack, spring=spring_out)
+    sched.frost_watch_date = fall.frost_nights[0] if fall.frost_nights else None
+    fall_out = fall.as_dict(iso)
+    water_kw = {"watered_today_mm": watered_today, "fall": fall_out}
+    probe = merge(sched, jev, balance, loc, yard, forecast[0].date, pack=pack, spring=spring_out, **water_kw)
     checklist = evaluate_checklist(
         winter=sched.winter,
         spring=spring_out,
@@ -314,9 +452,22 @@ def run() -> DailyReport:
             for c in checklist
         ]
     report = merge(
-        sched, jev, balance, loc, yard, forecast[0].date, pack=pack, spring=spring_out, checklist=checklist
+        sched, jev, balance, loc, yard, forecast[0].date, pack=pack, spring=spring_out, checklist=checklist, **water_kw
     )
     ran_at = now_cst()
+    report.feed = {
+        **report.feed,
+        "watered_today_mm": round(watered_today, 2),
+        "watered_today_minutes": yard.scheduled_water_minutes.get(iso, 0.0),
+        "soil_now_mm": round(min(yard.capacity_mm, balance + watered_today), 2),
+        "next_water_mm": round(sched.next_water_mm, 2),
+        "next_water_minutes": minutes_for(sched.next_water_mm, yard),
+        "following_water_mm": round(sched.following_water_mm, 2),
+        "following_water_minutes": minutes_for(sched.following_water_mm, yard),
+        "next_mow_height": sched.next_mow_height,
+        "growth_rate_in_day": yard.growth_rate_in_day,
+        "mowed_today": iso in (yard.mow_log or {}),
+    }
     rows = record_ledger(ledger_entry(report, ran_at))
     report.previous_run = rows[1] if len(rows) > 1 else None
     report.feed = {
@@ -333,7 +484,7 @@ def run() -> DailyReport:
 
 
 def main() -> None:
-    print(run().model_dump_json(indent=2))
+    print(run(refresh=True).model_dump_json(indent=2))
 
 
 if __name__ == "__main__":

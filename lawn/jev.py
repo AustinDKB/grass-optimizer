@@ -27,7 +27,7 @@ def questions() -> dict:
             instructions="Will rain in 48 hours refill the soil enough to skip manual watering, ignoring winter shutdown?",
         ),
         "freeze_blowout_now": Noul(
-            instructions="Do `forecast` lows hit 0C or below in 7 nights, requiring a 25mm soak and sprinkler blowout now?",
+            instructions="Do `forecast` lows hit 0C or below in 7 nights? Warning only: a frost night does not stop growth.",
         ),
         "mower_regime": Choice(
             instructions="Which SK winter mowing height regime applies to `forecast` highs?",

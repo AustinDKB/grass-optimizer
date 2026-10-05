@@ -1,35 +1,103 @@
 {
-  "current_water_balance_mm": 8.98,
-  "estimated_growth_rate": "medium",
+  "current_water_balance_mm": 7.92,
+  "snowpack_mm": 0.0,
+  "estimated_growth_rate": "low",
   "lawn_action_items": {
-    "should_water": true,
-    "target_water_amount_mm": 9.78,
+    "should_water": false,
+    "target_water_amount_mm": 0.0,
     "should_mow": false,
     "recommended_mower_height_inches": 3.5,
     "is_winter_shutdown_triggered": false
   },
-  "reasoning_summary": "Warman, Saskatchewan. Soil water balance 9.0 mm of a 25 mm profile. Growth medium. Next water 2026-09-18 (9.78 mm / 60 min @ 4 GPM); water again 2026-09-23. Last deep soak 2026-10-13. Next mow 2026-09-22; last winter cut 2026-09-29. Frost watch none in 14 days. Winter phase 0 (0 summer / 1 slowing / 2 final cut / 3 lockdown). Jev rain-in-48h 0.08, freeze 0.06.",
+  "reasoning_summary": "Martensville, Saskatchewan. Soil water 7.9 of 25 mm, soil 11.1 °C. Growth low; blade about 3.52 in. Next water 2026-10-11 (13.6 mm / 83.2 min). Next mow 2026-10-07 at 3 in. Hose cleanup 2026-10-11 (hose ice). Grass stops 2026-10-23. Frost nights: 2026-10-11, 2026-10-12. Winter 0 / spring 0.",
   "schedule": {
-    "next_water_date": "2026-09-18",
-    "following_water_date": "2026-09-23",
-    "next_mow_date": "2026-09-22",
-    "last_water_of_season": "2026-10-13",
-    "last_mow_of_season": "2026-09-29",
-    "frost_watch_date": null
+    "next_water_date": "2026-10-11",
+    "following_water_date": null,
+    "next_water_mm": 13.56,
+    "following_water_mm": 0.0,
+    "next_mow_date": "2026-10-07",
+    "next_mow_height": 3.0,
+    "last_water_of_season": "2026-10-11",
+    "last_mow_of_season": null,
+    "frost_watch_date": "2026-10-11",
+    "final_soak_mm": 0.0,
+    "mows": [
+      [
+        "2026-10-07",
+        3.0,
+        3.62
+      ],
+      [
+        "2026-10-16",
+        2.5,
+        3.16
+      ]
+    ],
+    "waters": [
+      [
+        "2026-10-05",
+        9.78,
+        "logged"
+      ],
+      [
+        "2026-10-11",
+        13.56,
+        "final soak"
+      ]
+    ]
   },
+  "winter_phase": 0,
+  "spring_phase": 0,
+  "checklist": [
+    {
+      "id": "blowout_ready",
+      "status": "wait",
+      "reason": "frost still in the 7-day forecast: keep the hose drained"
+    },
+    {
+      "id": "first_water",
+      "status": "wait",
+      "reason": "not in green-up yet"
+    },
+    {
+      "id": "first_mow",
+      "status": "wait",
+      "reason": "turf not in green-up / still winter-short"
+    },
+    {
+      "id": "raise_height",
+      "status": "wait",
+      "reason": "not in spring ladder yet"
+    },
+    {
+      "id": "first_fertilizer",
+      "status": "wait",
+      "reason": "wait for green-up after thaw"
+    },
+    {
+      "id": "overseed",
+      "status": "wait",
+      "reason": "too cold / dormant for seed"
+    },
+    {
+      "id": "aerate",
+      "status": "wait",
+      "reason": "soil frozen or dormant"
+    }
+  ],
   "jev": {
-    "growth": "medium",
-    "growth_score": 1.21,
-    "growth_confidence": 0.64,
-    "significant_rain_24_48h": 0.08,
-    "should_mow_now": 0.48,
-    "rain_covers_watering": 0.09,
-    "freeze_blowout_now": 0.06,
-    "mower_regime": "summer",
-    "mower_regime_confidence": 0.35,
-    "model": "jev-1.13.0"
+    "growth": "low",
+    "growth_score": 0.3,
+    "growth_confidence": 1.0,
+    "significant_rain_24_48h": 0.0,
+    "should_mow_now": 0.0,
+    "rain_covers_watering": 0.0,
+    "freeze_blowout_now": 1.0,
+    "mower_regime": "slowing",
+    "mower_regime_confidence": 1.0,
+    "model": "formula"
   },
-  "as_of": "2026-09-18",
+  "as_of": "2026-10-05",
   "feed": {
     "address": "702B 1st Avenue North, Martensville, SK",
     "grass": "Scotts Turf Builder Quick Thick Shade & Sun",
@@ -43,7 +111,7 @@
     "trigger_mm": 10.0,
     "kc": 0.95,
     "et_factor": 1.0,
-    "mower_height_inches": 3.0,
+    "mower_height_inches": 3.5,
     "mower_max_inches": 4.0,
     "mower_deck": [
       1.25,
@@ -54,16 +122,195 @@
       3.5,
       4.0
     ],
-    "last_mow_date": "2026-09-17",
-    "target_water_minutes": 60.0,
-    "as_of": "2026-09-18",
-    "ran_at": "2026-09-18T16:00-06:00",
-    "ledger_count": 5
+    "last_mow_date": "2026-10-03",
+    "target_water_minutes": 0.0,
+    "as_of": "2026-10-05",
+    "watered_today_mm": 9.78,
+    "watered_today_minutes": 60.0,
+    "soil_now_mm": 17.7,
+    "next_water_mm": 13.56,
+    "next_water_minutes": 83.2,
+    "following_water_mm": 0.0,
+    "following_water_minutes": 0.0,
+    "next_mow_height": 3.0,
+    "growth_rate_in_day": 0.15,
+    "mowed_today": false,
+    "ran_at": "2026-10-05T13:06-06:00",
+    "ledger_count": 12,
+    "snowpack_mm": 0.0,
+    "winter_phase": 0,
+    "spring_phase": 0
+  },
+  "fall": {
+    "soil_now_c": 11.1,
+    "soil_now_basis": "forecast",
+    "soil_week_c": [
+      [
+        "2026-10-05",
+        11.1,
+        "forecast"
+      ],
+      [
+        "2026-10-06",
+        11.7,
+        "forecast"
+      ],
+      [
+        "2026-10-07",
+        9.7,
+        "forecast"
+      ],
+      [
+        "2026-10-08",
+        8.6,
+        "forecast"
+      ],
+      [
+        "2026-10-09",
+        8.9,
+        "forecast"
+      ],
+      [
+        "2026-10-10",
+        5.9,
+        "forecast"
+      ],
+      [
+        "2026-10-11",
+        3.0,
+        "forecast"
+      ],
+      [
+        "2026-10-12",
+        0.8,
+        "forecast"
+      ],
+      [
+        "2026-10-13",
+        4.2,
+        "model"
+      ],
+      [
+        "2026-10-14",
+        7.4,
+        "model"
+      ],
+      [
+        "2026-10-15",
+        10.0,
+        "model"
+      ],
+      [
+        "2026-10-16",
+        11.4,
+        "model"
+      ],
+      [
+        "2026-10-17",
+        11.4,
+        "model"
+      ],
+      [
+        "2026-10-18",
+        11.7,
+        "model"
+      ],
+      [
+        "2026-10-19",
+        12.7,
+        "model"
+      ],
+      [
+        "2026-10-20",
+        12.3,
+        "model"
+      ]
+    ],
+    "grow_week_in": [
+      [
+        "2026-10-05",
+        0.056
+      ],
+      [
+        "2026-10-06",
+        0.045
+      ],
+      [
+        "2026-10-07",
+        0.027
+      ],
+      [
+        "2026-10-08",
+        0.026
+      ],
+      [
+        "2026-10-09",
+        0.036
+      ],
+      [
+        "2026-10-10",
+        0.001
+      ],
+      [
+        "2026-10-11",
+        0.0
+      ],
+      [
+        "2026-10-12",
+        0.0
+      ],
+      [
+        "2026-10-13",
+        0.0
+      ],
+      [
+        "2026-10-14",
+        0.017
+      ],
+      [
+        "2026-10-15",
+        0.055
+      ],
+      [
+        "2026-10-16",
+        0.056
+      ],
+      [
+        "2026-10-17",
+        0.038
+      ],
+      [
+        "2026-10-18",
+        0.045
+      ],
+      [
+        "2026-10-19",
+        0.07
+      ],
+      [
+        "2026-10-20",
+        0.045
+      ]
+    ],
+    "frost_nights": [
+      "2026-10-11",
+      "2026-10-12"
+    ],
+    "hose_date": "2026-10-11",
+    "hose_basis": "forecast: 0.25 in of ice by 2026-10-12 09:00",
+    "dormant_date": "2026-10-23",
+    "dormant_basis": "climate: median past year (soil forecast/model clear to 2026-10-20)",
+    "cleanup_date": "2026-10-11",
+    "cleanup_basis": "hose ice",
+    "blade_in": 3.52,
+    "blade_basis": "cut 3.5 in on 2026-10-03 + growth",
+    "implied_rate_in_day": null,
+    "ice_need_fdh": 36.8
   },
   "previous_run": {
-    "ran_at": "2026-09-18T12:00-06:00",
-    "as_of": "2026-09-18",
-    "balance_mm": 8.98,
+    "ran_at": "2026-10-04T16:00-06:00",
+    "as_of": "2026-10-04",
+    "balance_mm": 0.0,
     "growth": "medium",
     "should_water": true,
     "should_mow": false,
@@ -71,13 +318,13 @@
     "target_minutes": 60.0,
     "cycle_minutes": 60.0,
     "gpm": 4.0,
-    "next_water": "2026-09-18",
-    "following_water": "2026-09-23",
-    "next_mow": "2026-09-22",
+    "next_water": "2026-10-04",
+    "following_water": "2026-10-05",
+    "next_mow": "2026-10-06",
     "height": 3.5,
     "shutdown": false,
-    "jev_growth": 1.09,
-    "jev_rain48": 0.05,
-    "jev_freeze": 0.06
+    "jev_growth": 1.0,
+    "jev_rain48": 0.0,
+    "jev_freeze": 0.0
   }
 }
