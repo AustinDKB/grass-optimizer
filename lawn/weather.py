@@ -104,3 +104,40 @@ def fetch_horizon(
 ) -> list[Day]:
     """Long-range days via day_summary (OWM supports ~1.5y). Skip failures."""
     return _summaries(key, yard, [(today + timedelta(days=n)).isoformat() for n in offsets])
+
+
+OPEN_METEO = "https://api.open-meteo.com/v1/forecast"
+OPEN_METEO_ARCHIVE = "https://archive-api.open-meteo.com/v1/archive"
+
+
+def fetch_open_meteo(yard: Yard, past_days: int = 7, forecast_days: int = 16) -> dict:
+    """Hourly 2 m air and 6 cm soil temperature, local time. No key needed.
+
+    Returns {"hourly": [[iso, air, soil, rain_mm], ...]}. Soil is None past the end of the soil forecast.
+    """
+    url = (
+        f"{OPEN_METEO}?latitude={yard.lat}&longitude={yard.lon}"
+        f"&hourly=temperature_2m,soil_temperature_6cm,precipitation&past_days={past_days}"
+        f"&forecast_days={forecast_days}&timezone=America%2FRegina"
+    )
+    h = _get(url)["hourly"]
+    rows = zip(h["time"], h["temperature_2m"], h["soil_temperature_6cm"], h["precipitation"])
+    return {"hourly": [list(r) for r in rows]}
+
+
+def fetch_climate(yard: Yard, first_year: int, last_year: int) -> dict:
+    """Past falls (Sep 1 - Dec 15), hourly air and 0-7 cm soil, from the ERA5 archive."""
+    url = (
+        f"{OPEN_METEO_ARCHIVE}?latitude={yard.lat}&longitude={yard.lon}"
+        f"&start_date={first_year}-09-01&end_date={last_year}-12-15"
+        f"&hourly=temperature_2m,soil_temperature_0_to_7cm&timezone=America%2FRegina"
+    )
+    h = _get(url)["hourly"]
+    years: dict[str, dict] = {}
+    for t, a, s in zip(h["time"], h["temperature_2m"], h["soil_temperature_0_to_7cm"]):
+        if not ("09-01" <= t[5:10] <= "12-15"):
+            continue
+        rec = years.setdefault(t[:4], {"start": t, "air": [], "soil": []})
+        rec["air"].append(None if a is None else round(a, 1))
+        rec["soil"].append(None if s is None else round(s, 1))
+    return {"lat": yard.lat, "lon": yard.lon, "first": first_year, "last": last_year, "years": years}
