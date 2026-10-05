@@ -6,8 +6,8 @@
     "should_water": false,
     "target_water_amount_mm": 0.0,
     "should_mow": false,
-    "recommended_mower_height_inches": 3.5,
-    "is_winter_shutdown_triggered": false
+    "recommended_mower_height_inches": 2.5,
+    "is_winter_shutdown_triggered": true
   },
   "reasoning_summary": "Martensville, Saskatchewan. Soil water 7.9 of 25 mm, soil 11.1 °C. Growth low; blade about 3.52 in. Next water 2026-10-11 (13.6 mm / 83.2 min). Next mow 2026-10-07 at 3 in. Hose cleanup 2026-10-11 (hose ice). Grass stops 2026-10-23. Frost nights: 2026-10-11, 2026-10-12. Winter 0 / spring 0.",
   "schedule": {
