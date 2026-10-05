@@ -45,7 +45,7 @@ def evaluate_checklist(
 
         if item_id == "blowout_ready":
             if winter >= 3 or (lows and min(lows) <= 0):
-                out.append(_item(item_id, "wait", "still in freeze / lockdown window"))
+                out.append(_item(item_id, "wait", "frost still in the 7-day forecast: keep the hose drained"))
             elif spring >= 1:
                 out.append(_item(item_id, "eligible", "thaw holding — check lines before first soak"))
             else:
@@ -59,7 +59,7 @@ def evaluate_checklist(
             elif rain48 >= yard.major_rain_mm:
                 out.append(_item(item_id, "wait", "soaking rain in next 48h"))
             elif winter >= 3:
-                out.append(_item(item_id, "wait", "lockdown — deep soak/blowout rules apply instead"))
+                out.append(_item(item_id, "wait", "grass stopped (cold soil): all off"))
             elif spring >= 1:
                 out.append(_item(item_id, "eligible", "pack clear and soil below trigger"))
             else:
