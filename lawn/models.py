@@ -71,7 +71,7 @@ class Yard(BaseModel):
     trigger_mm: float = 10
     major_rain_mm: float = 8
     melt_factor_mm_per_c: float = 2.0
-    melt_soak_fraction: float = 0.4  # share of snow melt that soaks in; the rest runs off frozen ground
+    melt_soak_fraction: float = 0.4  # share of snow melt, and of rain on frozen ground, that soaks in; the rest runs off
     spring_green_high_c: float = 10.0
     spring_summer_high_c: float = 15.0
     spring_pack_clear_mm: float = 5.0
