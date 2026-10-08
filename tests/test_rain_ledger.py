@@ -32,3 +32,15 @@ class RainLedgerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FrozenByDayTest(unittest.TestCase):
+    def test_soil_daily_mean_at_or_below_zero_is_frozen(self):
+        from lawn.daily import frozen_by_day
+        om = {"hourly": [
+            ["2026-04-01T00:00", -5, -1.0, 0], ["2026-04-01T12:00", 4, 0.5, 0],
+            ["2026-04-02T00:00", 0, 0.5, 0], ["2026-04-02T12:00", 8, 2.0, 0],
+            ["2026-04-03T00:00", 0, None, 0],
+        ]}
+        self.assertEqual(frozen_by_day(om), {"2026-04-01": True, "2026-04-02": False})
+        self.assertEqual(frozen_by_day(None), {})
