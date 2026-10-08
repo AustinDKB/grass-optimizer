@@ -256,6 +256,27 @@ def record_ledger(entry: dict, path: Path | None = None) -> list[dict]:
     return rows
 
 
+def rain_by_day(history: list[Day], om: dict | None, today: str, now: str) -> dict[str, tuple[float, bool]]:
+    """Recorded rain (mm, final?) per day: full past days from OpenWeather, today so far from Open-Meteo hourly."""
+    rain = {d.date: (round(d.rain, 2), True) for d in history}
+    hours = [h for h in (om or {}).get("hourly") or [] if h[0][:10] == today and h[0][:13] <= now[:13]]
+    if hours:
+        rain[today] = (round(sum(h[3] or 0.0 for h in hours), 2), False)
+    return rain
+
+
+def record_rain(rain: dict[str, tuple[float, bool]], path: Path | None = None) -> list[dict]:
+    """Write recorded rain onto ledger rows. A finished day is never replaced by a partial count."""
+    dest = path or LEDGER
+    rows = json.loads(dest.read_text()) if dest.exists() else []
+    for r in rows:
+        got = rain.get(r.get("as_of"))
+        if got and not (r.get("rain_final") and not got[1]):
+            r["rain_mm"], r["rain_final"] = got
+    dest.write_text(json.dumps(rows, indent=2))
+    return rows
+
+
 def ledger_entry(report: DailyReport, ran_at: str) -> dict:
     a = report.lawn_action_items
     s = report.schedule
@@ -468,7 +489,8 @@ def run(refresh: bool = False) -> DailyReport:
         "growth_rate_in_day": yard.growth_rate_in_day,
         "mowed_today": iso in (yard.mow_log or {}),
     }
-    rows = record_ledger(ledger_entry(report, ran_at))
+    record_ledger(ledger_entry(report, ran_at))
+    rows = record_rain(rain_by_day(history, om, iso, ran_at))
     report.previous_run = rows[1] if len(rows) > 1 else None
     report.feed = {
         **report.feed,
