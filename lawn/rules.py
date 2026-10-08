@@ -108,9 +108,13 @@ def melt_cap(tmax: float, yard: Yard | None = None) -> float:
 
 
 def step_moisture(
-    soil: float, pack: float, day: Day, manual: float, yard: Yard | None = None
+    soil: float, pack: float, day: Day, manual: float, yard: Yard | None = None, frozen: bool | None = None
 ) -> tuple[float, float]:
-    """One day: freezing precip → pack; part of the melt + liquid + irrigation → soil; then ET."""
+    """One day: freezing precip → pack; part of the melt + liquid + irrigation → soil; then ET.
+
+    On frozen ground only melt_soak_fraction of the rain soaks in. frozen = soil 6 cm daily mean
+    at or below 0 °C; when that is unknown (None), snow on the ground at the start of the day.
+    """
     y = yard or Yard()
     soil, pack = float(soil), float(pack)
     precip, manual = float(day.rain), float(manual)
@@ -118,9 +122,12 @@ def step_moisture(
         pack += precip
         soil = step_balance(soil, 0.0, manual, 0.0, y.capacity_mm)
         return soil, pack
+    if frozen is None:
+        frozen = pack > 0
     melt = min(pack, melt_cap(day.tmax, y))
     pack -= melt
-    soil = step_balance(soil, precip + melt * y.melt_soak_fraction, manual, et_mm(day.tmax, day.tmin, day.date, y), y.capacity_mm)
+    rain = precip * (y.melt_soak_fraction if frozen else 1.0)
+    soil = step_balance(soil, rain + melt * y.melt_soak_fraction, manual, et_mm(day.tmax, day.tmin, day.date, y), y.capacity_mm)
     return soil, pack
 
 
@@ -131,13 +138,14 @@ def replay_moisture(
     manuals: dict[str, float] | None = None,
     yard: Yard | None = None,
     since: str | None = None,
+    frozen: dict[str, bool] | None = None,
 ) -> tuple[float, float]:
-    y, manuals = yard or Yard(), manuals or {}
+    y, manuals, frozen = yard or Yard(), manuals or {}, frozen or {}
     soil, pack = float(start_soil), float(start_pack)
     for d in days:
         if since is not None and d.date < since:
             continue
-        soil, pack = step_moisture(soil, pack, d, manuals.get(d.date, 0.0), y)
+        soil, pack = step_moisture(soil, pack, d, manuals.get(d.date, 0.0), y, frozen.get(d.date))
     return soil, pack
 
 

@@ -39,10 +39,31 @@ class StepMoistureTests(unittest.TestCase):
 
     def test_only_part_of_the_melt_soaks_in(self):
         y = Yard(capacity_mm=25, melt_factor_mm_per_c=2.0, melt_soak_fraction=0.4, kc=0.0)
-        # pack 20, tmax 5 → melt 10, 4 soaks in, 6 runs off; no ET
-        soil, pack = step_moisture(10.0, 20.0, _day("2026-03-20", tmax=5, tmin=-1, rain=1.0), 0.0, y)
+        # pack 20, tmax 5 → melt 10, 4 soaks in, 6 runs off; soil not frozen so rain 1 counts fully; no ET
+        soil, pack = step_moisture(10.0, 20.0, _day("2026-03-20", tmax=5, tmin=-1, rain=1.0), 0.0, y, frozen=False)
         self.assertEqual(pack, 10.0)
         self.assertAlmostEqual(soil, 15.0)
+
+    def test_rain_on_frozen_ground_soaks_in_like_melt(self):
+        y = Yard(capacity_mm=25, melt_soak_fraction=0.4, kc=0.0)
+        day = _day("2026-04-05", tmax=6, tmin=-3, rain=10.0)
+        self.assertAlmostEqual(step_moisture(10.0, 0.0, day, 0.0, y, frozen=True)[0], 14.0)
+        self.assertAlmostEqual(step_moisture(10.0, 0.0, day, 0.0, y, frozen=False)[0], 20.0)
+
+    def test_snow_on_ground_means_frozen_when_soil_temp_unknown(self):
+        y = Yard(capacity_mm=25, melt_factor_mm_per_c=2.0, melt_soak_fraction=0.4, kc=0.0)
+        # pack 20, tmax 5 → melt 10 → 4; rain 10 on snow → 4; soil 10 → 18
+        soil, _ = step_moisture(10.0, 20.0, _day("2026-03-20", tmax=5, tmin=-1, rain=10.0), 0.0, y)
+        self.assertAlmostEqual(soil, 18.0)
+        # no snow, no soil reading → rain counts fully
+        soil, _ = step_moisture(10.0, 0.0, _day("2026-05-20", tmax=5, tmin=-1, rain=10.0), 0.0, y)
+        self.assertAlmostEqual(soil, 20.0)
+
+    def test_replay_uses_frozen_days(self):
+        y = Yard(capacity_mm=25, melt_soak_fraction=0.4, kc=0.0)
+        days = [_day("2026-04-01", 5, -2, 10.0), _day("2026-04-02", 8, 0, 10.0)]
+        soil, _ = replay_moisture(days, start_soil=0.0, yard=y, frozen={"2026-04-01": True, "2026-04-02": False})
+        self.assertAlmostEqual(soil, 14.0)
 
 
 class ReplayMoistureTests(unittest.TestCase):

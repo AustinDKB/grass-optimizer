@@ -256,6 +256,15 @@ def record_ledger(entry: dict, path: Path | None = None) -> list[dict]:
     return rows
 
 
+def frozen_by_day(om: dict | None) -> dict[str, bool]:
+    """Frozen ground per day: Open-Meteo soil 6 cm daily mean at or below 0 °C. Days with no soil reading are left out."""
+    temps: dict[str, list[float]] = {}
+    for h in (om or {}).get("hourly") or []:
+        if len(h) > 2 and h[2] is not None:
+            temps.setdefault(h[0][:10], []).append(h[2])
+    return {d: sum(v) / len(v) <= 0 for d, v in temps.items()}
+
+
 def rain_by_day(history: list[Day], om: dict | None, today: str, now: str) -> dict[str, tuple[float, bool]]:
     """Recorded rain (mm, final?) per day: full past days from OpenWeather, today so far from Open-Meteo hourly."""
     rain = {d.date: (round(d.rain, 2), True) for d in history}
@@ -401,7 +410,8 @@ def run(refresh: bool = False) -> DailyReport:
     manuals = manuals_mm(yard)
     start_soil, start_pack, since = replay_start(history, yard)
     balance, pack = replay_moisture(
-        history, start_soil=start_soil, start_pack=start_pack, manuals=manuals, yard=yard, since=since
+        history, start_soil=start_soil, start_pack=start_pack, manuals=manuals, yard=yard, since=since,
+        frozen=frozen_by_day(om),
     )
     watered_today = manuals.get(iso, 0.0)
     since_mow = days_since_mow(today, yard.last_mow_date)
