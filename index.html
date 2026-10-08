@@ -141,7 +141,7 @@
         <table class="ledger" id="ledger">
           <thead>
             <tr>
-              <th>Ran (CST)</th><th>As of</th><th class="num">Soil mm</th><th>Growth</th>
+              <th>Ran (CST)</th><th>As of</th><th class="num">Rain mm</th><th class="num">Soil mm</th><th>Growth</th>
               <th>Water</th><th>Mow</th><th class="num">Min</th><th>Next water</th><th>Next mow</th>
             </tr>
           </thead>
@@ -334,6 +334,7 @@
       $("ledger").querySelector("tbody").innerHTML = shown.map((r) => `<tr>
         <td class="mono">${esc(stamp(r.ran_at))}</td>
         <td>${short(r.as_of)}</td>
+        <td class="num">${n1(r.rain_mm)}${r.rain_mm != null && !r.rain_final ? '<span class="muted"> so far</span>' : ""}</td>
         <td class="num">${n1(r.balance_mm)}</td>
         <td>${esc(r.growth || "—")}</td>
         <td class="${r.should_water || r.watered_today_mm ? "yes" : ""}">${r.watered_today_mm ? "done" : yn(r.should_water)}</td>
@@ -341,7 +342,7 @@
         <td class="num">${r.should_water ? Math.round(r.target_minutes ?? r.cycle_minutes ?? 0) : "—"}</td>
         <td>${short(r.next_water)}</td>
         <td>${short(r.next_mow)}</td>
-      </tr>`).join("") || `<tr><td colspan="9">no runs yet</td></tr>`;
+      </tr>`).join("") || `<tr><td colspan="10">no runs yet</td></tr>`;
       const more = $("ledger-more");
       more.hidden = ledgerRows.length <= LEDGER_SHOW;
       more.textContent = ledgerAll ? "Show newest " + LEDGER_SHOW : "Show all " + ledgerRows.length + " runs";
