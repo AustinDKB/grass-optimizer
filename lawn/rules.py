@@ -110,7 +110,7 @@ def melt_cap(tmax: float, yard: Yard | None = None) -> float:
 def step_moisture(
     soil: float, pack: float, day: Day, manual: float, yard: Yard | None = None
 ) -> tuple[float, float]:
-    """One day: freezing precip → pack; melt + liquid + irrigation → soil; then ET."""
+    """One day: freezing precip → pack; part of the melt + liquid + irrigation → soil; then ET."""
     y = yard or Yard()
     soil, pack = float(soil), float(pack)
     precip, manual = float(day.rain), float(manual)
@@ -120,7 +120,7 @@ def step_moisture(
         return soil, pack
     melt = min(pack, melt_cap(day.tmax, y))
     pack -= melt
-    soil = step_balance(soil, precip + melt, manual, et_mm(day.tmax, day.tmin, day.date, y), y.capacity_mm)
+    soil = step_balance(soil, precip + melt * y.melt_soak_fraction, manual, et_mm(day.tmax, day.tmin, day.date, y), y.capacity_mm)
     return soil, pack
 
 
