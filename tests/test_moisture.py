@@ -37,6 +37,14 @@ class StepMoistureTests(unittest.TestCase):
         self.assertEqual(soil, 8.0)
 
 
+    def test_only_part_of_the_melt_soaks_in(self):
+        y = Yard(capacity_mm=25, melt_factor_mm_per_c=2.0, melt_soak_fraction=0.4, kc=0.0)
+        # pack 20, tmax 5 → melt 10, 4 soaks in, 6 runs off; no ET
+        soil, pack = step_moisture(10.0, 20.0, _day("2026-03-20", tmax=5, tmin=-1, rain=1.0), 0.0, y)
+        self.assertEqual(pack, 10.0)
+        self.assertAlmostEqual(soil, 15.0)
+
+
 class ReplayMoistureTests(unittest.TestCase):
     def test_replay_builds_pack_then_melts(self):
         y = Yard(capacity_mm=25, melt_factor_mm_per_c=2.0)
