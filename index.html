@@ -320,7 +320,7 @@
         if (day === fa.dormant_date) plan.push("GRASS STOPS · all off");
         else if (fa.dormant_date && day > fa.dormant_date) plan.push("off");
         const cls = day === d.as_of ? ' class="today"' : "";
-        return `<tr${cls}><td>${short(day)}</td><td class="num">${n1(c)}<span class="muted"> ${esc(basis[0] || "")}</span></td><td class="num">${(grow[day] ?? 0).toFixed(3)}</td><td class="wrap">${esc(plan.join(" · ") || "—")}</td></tr>`;
+        return `<tr${cls}><td>${short(day)}</td><td class="num">${n1(c)}<span class="muted"> ${esc(basis === "model" ? "modelled" : basis[0] || "")}</span></td><td class="num">${(grow[day] ?? 0).toFixed(3)}</td><td class="wrap">${esc(plan.join(" · ") || "—")}</td></tr>`;
       });
       $("plan").querySelector("tbody").innerHTML = rows.join("") || `<tr><td colspan="4">no soil data on this snapshot</td></tr>`;
     }
