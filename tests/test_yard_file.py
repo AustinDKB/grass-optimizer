@@ -1,7 +1,9 @@
+import io
 import json
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 
@@ -18,17 +20,21 @@ class YardFile(unittest.TestCase):
             (root / "yard.example.json").write_text(
                 Yard(address="Example, SK", lat=1.0, lon=2.0).model_dump_json()
             )
-            with mock.patch.object(daily, "ROOT", root):
+            err = io.StringIO()
+            with mock.patch.object(daily, "ROOT", root), redirect_stderr(err):
                 yard = daily.load_yard()
             self.assertEqual((yard.address, yard.lat, yard.lon), ("Example, SK", 1.0, 2.0))
+            self.assertIn("yard.json missing", err.getvalue())
 
     def test_yard_json_wins_over_example(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "yard.example.json").write_text(Yard(address="Example, SK").model_dump_json())
             (root / "yard.json").write_text(Yard(address="Private").model_dump_json())
-            with mock.patch.object(daily, "ROOT", root):
+            err = io.StringIO()
+            with mock.patch.object(daily, "ROOT", root), redirect_stderr(err):
                 self.assertEqual(daily.load_yard().address, "Private")
+            self.assertEqual(err.getvalue(), "")
 
     def test_save_yard_writes_yard_json_not_example(self):
         with tempfile.TemporaryDirectory() as tmp:
