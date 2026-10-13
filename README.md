@@ -4,7 +4,7 @@ Daily watering and mowing schedule for a west-facing Saskatoon, SK yard (Scotts 
 
 Live on Tailscale only: [grass.austinbakanec.com](https://grass.austinbakanec.com) (same bind as sniper/pp — not on the public internet).
 
-Runs 7am / 12pm / 4pm **America/Regina** (Saskatchewan CST, no DST). Each run appends a newest-first ledger. Change knobs on the page (or in `yard.json`). Never mow on a watering day — cut the dry day before.
+Runs 7am / 12pm / 4pm **America/Regina** (Saskatchewan CST, no DST). Each run appends a newest-first ledger. Change knobs on the page (or in `yard.json`, a private gitignored copy of `yard.example.json`). Never mow on a watering day — cut the dry day before.
 
 ```bash
 python3 -m venv .venv

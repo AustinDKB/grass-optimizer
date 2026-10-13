@@ -15,3 +15,4 @@ ledger.json
 weather_cache.json
 *.bak-*
 climate_cache.json
+yard.json

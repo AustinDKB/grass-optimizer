@@ -51,7 +51,10 @@ def load_env() -> None:
 
 
 def load_yard() -> Yard:
+    # yard.json is private and gitignored; fresh clones fall back to the example.
     path = ROOT / "yard.json"
+    if not path.exists():
+        path = ROOT / "yard.example.json"
     if not path.exists():
         return Yard()
     raw = json.loads(path.read_text())
@@ -61,7 +64,7 @@ def load_yard() -> Yard:
         yard = yard.model_copy(
             update={"mow_log": {yard.last_mow_date: float(yard.mower_height_inches)}}
         )
-        path.write_text(yard.model_dump_json(indent=2))
+        (ROOT / "yard.json").write_text(yard.model_dump_json(indent=2))
     return yard
 
 
