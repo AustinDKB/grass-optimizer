@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -51,7 +52,11 @@ def load_env() -> None:
 
 
 def load_yard() -> Yard:
+    # yard.json is private and gitignored; fresh clones fall back to the example.
     path = ROOT / "yard.json"
+    if not path.exists():
+        path = ROOT / "yard.example.json"
+        print(f"warning: {ROOT / 'yard.json'} missing; using {path.name}", file=sys.stderr)
     if not path.exists():
         return Yard()
     raw = json.loads(path.read_text())
@@ -61,7 +66,7 @@ def load_yard() -> Yard:
         yard = yard.model_copy(
             update={"mow_log": {yard.last_mow_date: float(yard.mower_height_inches)}}
         )
-        path.write_text(yard.model_dump_json(indent=2))
+        (ROOT / "yard.json").write_text(yard.model_dump_json(indent=2))
     return yard
 
 
