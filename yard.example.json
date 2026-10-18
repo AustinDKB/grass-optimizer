@@ -57,5 +57,6 @@
     "2026-10-05": 60.0
   },
   "prior_balance_mm": 15.0,
-  "prior_snowpack_mm": 0.0
+  "prior_snowpack_mm": 0.0,
+  "hose_cleaned_on": null
 }

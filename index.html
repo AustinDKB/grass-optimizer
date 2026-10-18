@@ -117,6 +117,7 @@
         <label class="field">Hose ice (in) <input name="hose_ice_in" type="number" inputmode="decimal" step="any" min="0.05" max="2" required /><span class="hint muted">Ice in the hose that forces the cleanup</span></label>
         <label class="field">Hose cold margin (°C) <input name="hose_margin_c" type="number" inputmode="decimal" step="any" min="0" max="10" required /><span class="hint muted">Ground air is colder than the forecast</span></label>
         <label class="field">Climate risk (%) <input name="hose_risk_pct" type="number" inputmode="numeric" step="1" min="1" max="100" required /><span class="hint muted">Past the forecast: date this % of past years froze</span></label>
+        <label class="field">Hose cleaned up on <input name="hose_cleaned_on" type="date" /><span class="hint muted">Empty = hose still out; set when put away</span></label>
         <label class="field">Grass stops below (°C soil) <input name="dormant_soil_c" type="number" inputmode="decimal" step="any" min="0" max="15" required /></label>
         <label class="field">… for days in a row <input name="dormant_days" type="number" inputmode="numeric" step="1" min="1" max="14" required /></label>
         <fieldset class="field wide" style="border:0;padding:0;margin:0">
@@ -206,8 +207,8 @@
       $("today-mow").className = "chip " + (a.should_mow ? "go" : "stop");
       const fa = d.fall || {};
       bladeNow = fa.blade_in ?? null;
-      const hoseAway = fa.cleanup_date && asOf > fa.cleanup_date;
-      $("shutdown").textContent = a.is_winter_shutdown_triggered ? "Grass stopped · all off" : hoseAway ? "Hose away · growing" : "Growing";
+      const hoseAway = fa.cleanup_basis === "done" || (fa.cleanup_date && asOf > fa.cleanup_date);
+      $("shutdown").textContent = a.is_winter_shutdown_triggered ? "Grass stopped · all off" : hoseAway ? "Hose away" : "Growing";
       const frostSoon = (fa.frost_nights || []).filter((x) => x <= addDays(asOf, 2));
       $("frost").hidden = !frostSoon.length;
       $("frost").textContent = frostSoon.length
@@ -314,7 +315,7 @@
         const plan = [];
         const w = waters[day], m = mows[day];
         if (w) plan.push(w[2] === "logged" ? "watered " + n1(w[1]) + " mm" : (w[2] === "final soak" ? "FINAL SOAK " : "water ") + mins(w[1] * minPerMm) + " (" + n1(w[1]) + " mm)");
-        if (day === fa.cleanup_date) plan.push("HOSE CLEANUP (after any soak)");
+        if (day === fa.cleanup_date && fa.cleanup_basis !== "done") plan.push("HOSE CLEANUP (after any soak)");
         if (m) plan.push("mow at " + m[1] + '" (blade ~' + n2(m[2]) + '")');
         if (frost.has(day)) plan.push(w && w[2] !== "logged" ? "frost: start the water after it melts" : "frost: no mow or walking until it melts");
         if (day === fa.dormant_date) plan.push("GRASS STOPS · all off");
@@ -478,7 +479,8 @@
 
     // ---- Settings ----
     const SETTINGS = ["cycle_minutes", "gpm", "sqft", "capacity_mm", "trigger_mm", "kc", "et_factor",
-      "growth_rate_in_day", "hose_ice_in", "hose_margin_c", "hose_risk_pct", "dormant_soil_c", "dormant_days"];
+      "growth_rate_in_day", "hose_ice_in", "hose_margin_c", "hose_risk_pct", "hose_cleaned_on",
+      "dormant_soil_c", "dormant_days"];
     function fillSettings(y) {
       const f = $("yard-form");
       for (const k of SETTINGS) f[k].value = y[k] ?? "";
@@ -495,7 +497,8 @@
         cycle_minutes: num("cycle_minutes"), gpm: num("gpm"), sqft: num("sqft"),
         capacity_mm: num("capacity_mm"), trigger_mm: num("trigger_mm"), kc: num("kc"), et_factor: num("et_factor"),
         growth_rate_in_day: num("growth_rate_in_day"), hose_ice_in: num("hose_ice_in"), hose_margin_c: num("hose_margin_c"),
-        hose_risk_pct: num("hose_risk_pct"), dormant_soil_c: num("dormant_soil_c"), dormant_days: num("dormant_days"),
+        hose_risk_pct: num("hose_risk_pct"), hose_cleaned_on: f.hose_cleaned_on.value || null,
+        dormant_soil_c: num("dormant_soil_c"), dormant_days: num("dormant_days"),
         mow_interval_days: { low: num("iv_low"), medium: num("iv_medium"), high: num("iv_high") },
       };
     }

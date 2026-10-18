@@ -29,6 +29,18 @@ AIR_H = 15.0  # W/m²·K, still air + clear-night radiation on a hose (high end 
 FALL_MONTHS = range(8, 13)
 
 
+def hose_cleaned_effective(yard: Yard, today: str) -> str | None:
+    """Return hose_cleaned_on when it applies to this run, else None.
+
+    Same calendar year only: a prior year's mark must not block spring watering.
+    A future date has no effect until that day.
+    """
+    d = yard.hose_cleaned_on
+    if d and d <= today and d[:4] == today[:4]:
+        return d
+    return None
+
+
 def growth_potential(tmean_c: float) -> float:
     """0..1, 1 at a daily mean air temperature of 20 °C."""
     return math.exp(-0.5 * ((tmean_c - GP_OPT_C) / GP_SPREAD_C) ** 2)
@@ -300,7 +312,10 @@ def fall_plan(
     elif clim_dorm:
         p.dormant_date, p.dormant_basis = clim_dorm, f"climate: median past year (soil forecast/model clear to {end})"
 
-    if fall:
+    cleaned = hose_cleaned_effective(yard, today)
+    if cleaned:
+        p.cleanup_date, p.cleanup_basis = cleaned, "done"
+    elif fall:
         pick = [(d, b) for d, b in ((p.hose_date, "hose ice"), (p.dormant_date, "grass stops")) if d]
         if pick:
             d, why = min(pick)
