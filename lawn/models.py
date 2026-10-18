@@ -87,6 +87,7 @@ class Yard(BaseModel):
     hose_ice_in: float = 0.25  # ice in the hose that forces the cleanup
     hose_margin_c: float = 2.0  # ground-level air runs colder than the 2 m forecast on clear nights
     hose_risk_pct: float = 20  # climate fallback: date by which this % of past years froze
+    hose_cleaned_on: str | None = None  # ISO date the hose was put away; None = still out
     dormant_soil_c: float = 5.0  # soil (6 cm) daily mean below this ...
     dormant_days: int = 5  # ... for this many days in a row = growth stopped, all off
     frost_c: float = 1.0  # low at or below this = frost warning

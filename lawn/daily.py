@@ -26,7 +26,7 @@ from lawn.rules import (
     spring_status,
     step_balance,
 )
-from lawn.season import fall_plan
+from lawn.season import fall_plan, hose_cleaned_effective
 from lawn.weather import fetch_climate, fetch_open_meteo, fetch_weather
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -74,6 +74,9 @@ def save_yard(data: dict) -> Yard:
     from lawn.actions import yard_patch_from_actions
 
     payload = {k: v for k, v in data.items() if v is not None}
+    # Empty date clears the mark (None is otherwise stripped above).
+    if "hose_cleaned_on" in data:
+        payload["hose_cleaned_on"] = data["hose_cleaned_on"] or None
     if "actions" in payload:
         payload.update(yard_patch_from_actions(payload.pop("actions") or []))
     current = load_yard().model_dump()
@@ -431,11 +434,14 @@ def run(refresh: bool = False) -> DailyReport:
 
     # Soil temperature, blade height, frost nights, grass-stop and hose cleanup dates.
     fall = fall_plan(yard, iso, history, forecast, om, load_climate(yard))
+    # Hose already away: cut off watering with no final soak (cleanup day is in the past).
+    cleaned = hose_cleaned_effective(yard, iso)
+    cleanup = (date.fromisoformat(iso) - timedelta(days=1)).isoformat() if cleaned else fall.cleanup_date
     plan = {
         "height": yard.mower_height_inches,
         "blade": fall.blade_in,
         "grow": fall.grow_in,
-        "cleanup": fall.cleanup_date,
+        "cleanup": cleanup,
         "dormant": fall.dormant_date,
     }
     # Plan over 16 days: OpenWeather days, then Open-Meteo days to the end of its forecast.
